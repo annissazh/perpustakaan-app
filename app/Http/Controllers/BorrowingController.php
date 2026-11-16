@@ -51,7 +51,7 @@ class BorrowingController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'book_id' => 'required|exists:books,id',
-            'duration_days' => 'required|integer|min:1|max:30', // Durasi pinjam dinamis sesuai instruksi dosen
+            'duration_days' => 'required|integer|min:1|max:30',
         ]);
 
         $book = Book::findOrFail($request->book_id);
@@ -77,7 +77,7 @@ class BorrowingController extends Controller
         return redirect('/borrowings')->with('success', 'Buku berhasil dipinjamkan!');
     }
 
-    // Memproses Pengembalian atau Status Buku Hilang
+    // Memproses Pengembalian atau Status Buku Hilang (Oleh Admin/Petugas)
     public function returnBook(Request $request, $id)
     {
         $borrowing = Borrowing::with('book')->findOrFail($id);
@@ -89,26 +89,21 @@ class BorrowingController extends Controller
         $now = Carbon::now();
         $dueDate = Carbon::parse($borrowing->due_date);
         
-        $status = $request->input('status', 'returned'); // 'returned' atau 'lost'
+        $status = $request->input('status', 'returned');
         $fineAmount = 0;
 
         if ($status == 'returned') {
-            // Hitung denda keterlambatan jika melewati tenggat waktu
             if ($now->greaterThan($dueDate)) {
                 $daysLate = $dueDate->diffInDays($now);
-                // Mengambil besaran denda spesifik dari masing-masing judul buku
                 $finePerDay = $borrowing->book->fine_per_day ?? 1000;
                 $fineAmount = $daysLate * $finePerDay;
                 $status = 'overdue'; 
             }
 
-            // Kembalikan stok buku karena fisik buku kembali
             $borrowing->book->increment('available_stock');
         } else {
-            // Jika status buku HILANG, kenakan denda ganti rugi (default Rp50.000 atau kustom)
             $fineAmount = $request->input('lost_fine_amount', 50000);
             $status = 'lost';
-            // Stok tidak dikembalikan karena buku hilang
         }
 
         $borrowing->update([
@@ -124,7 +119,7 @@ class BorrowingController extends Controller
         return redirect('/borrowings')->with('success', $message);
     }
 
-    // Menghasilkan PDF yang MENGIKUTI FILTER yang sedang aktif (Timezone Lokal Asia/Jakarta)
+    // Menghasilkan PDF yang MENGIKUTI FILTER yang sedang aktif
     public function reportPdf(Request $request)
     {
         $query = Borrowing::with(['user', 'admin', 'book'])->orderBy('borrow_date', 'desc');
@@ -161,5 +156,75 @@ class BorrowingController extends Controller
                         ->get();
                         
         return view('riwayat', compact('borrowings')); 
+    }
+
+    // Method Peminjaman Mandiri untuk Role Anggota
+    public function pinjamMandiri(Request $request, $book_id)
+    {
+        $book = Book::findOrFail($book_id);
+
+        if ($book->available_stock < 1) {
+            return back()->with('error', 'Maaf, stok buku ini sedang kosong.');
+        }
+
+        $durationDays = $request->input('duration_days', 7);
+        $borrowDate = Carbon::now();
+        $dueDate = Carbon::now()->addDays($durationDays);
+
+        Borrowing::create([
+            'user_id'       => Auth::id(),
+            'admin_id'      => null,
+            'book_id'       => $book->id,
+            'borrow_date'   => $borrowDate,
+            'due_date'      => $dueDate,
+            'duration_days' => $durationDays,
+            'status'        => 'borrowed',
+        ]);
+
+        $book->decrement('available_stock');
+
+        return redirect('/riwayat')->with('success', 'Buku berhasil dipinjam! Silakan cek di riwayat peminjaman.');
+    }
+
+    // 👇 TAMBAHAN BARU: Method Pengembalian Mandiri untuk Role Anggota
+    public function kembalikanMandiri($id)
+    {
+        $borrowing = Borrowing::with('book')
+                        ->where('id', $id)
+                        ->where('user_id', Auth::id())
+                        ->firstOrFail();
+
+        if ($borrowing->status != 'borrowed') {
+            return back()->with('error', 'Buku ini sudah dikembalikan sebelumnya.');
+        }
+
+        $now = Carbon::now();
+        $dueDate = Carbon::parse($borrowing->due_date);
+        $status = 'returned';
+        $fineAmount = 0;
+
+        // Hitung denda keterlambatan jika melewati tenggat waktu
+        if ($now->greaterThan($dueDate)) {
+            $daysLate = $dueDate->diffInDays($now);
+            $finePerDay = $borrowing->book->fine_per_day ?? 1000;
+            $fineAmount = $daysLate * $finePerDay;
+            $status = 'overdue';
+        }
+
+        // Kembalikan stok buku
+        $borrowing->book->increment('available_stock');
+
+        // Update status peminjaman
+        $borrowing->update([
+            'return_date' => $now,
+            'status'      => $status,
+            'fine_amount' => $fineAmount,
+        ]);
+
+        $message = $fineAmount > 0
+            ? "Buku berhasil dikembalikan dengan keterlambatan. Denda: Rp" . number_format($fineAmount, 0, ',', '.')
+            : "Buku berhasil dikembalikan tepat waktu!";
+
+        return redirect('/riwayat')->with('success', $message);
     }
 }

@@ -4,6 +4,14 @@
 @section('page-title', 'Katalog Koleksi Buku')
 
 @section('content')
+<!-- Menampilkan Pesan Error jika stok habis -->
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible show fade">
+        <i class="bi bi-exclamation-circle"></i> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
@@ -63,6 +71,26 @@
                                 <span class="badge bg-danger">Habis</span>
                             @endif
                         </div>
+
+                        <!-- 👇 TAMBAHAN BARU: Tombol Pinjam Khusus Role Anggota -->
+                        @auth
+                            @if(auth()->user()->role === 'anggota')
+                                <div class="mt-3 pt-2 border-top">
+                                    @if($book->available_stock > 0)
+                                        <form action="{{ route('katalog.pinjam', $book->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Apakah Anda yakin ingin meminjam buku {{ $book->title }} selama 7 hari?')">
+                                                <i class="bi bi-book-half"></i> Pinjam Buku
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="btn btn-secondary w-100" disabled>
+                                            <i class="bi bi-x-circle"></i> Stok Habis
+                                        </button>
+                                    @endif
+                                </div>
+                            @endif
+                        @endauth
                     </div>
                 </div>
             </div>

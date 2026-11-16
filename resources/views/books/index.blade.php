@@ -60,11 +60,18 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
-                                            <a href="/books/{{ $book->id }}/edit" class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="/books/{{ $book->id }}" class="btn btn-sm btn-info text-white" title="Detail Buku">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/books/{{ $book->id }}/edit" class="btn btn-sm btn-warning" title="Edit Buku">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
                                             <form action="/books/{{ $book->id }}" method="POST" onsubmit="return confirm('Hapus buku ini?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Hapus Buku">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </form>
                                         </div>
                                     </td>
