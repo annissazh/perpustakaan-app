@@ -15,6 +15,12 @@ class BookController extends Controller
         return view('books.index', compact('books'));
     }
 
+    public function show($id)
+    {
+        $book = Book::with('category')->findOrFail($id);
+        return view('books.show', compact('book'));
+    }
+
     public function create()
     {
         $categories = Category::all();

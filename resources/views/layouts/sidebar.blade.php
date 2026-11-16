@@ -68,6 +68,13 @@
                     </a>
                 </li>
 
+                <li class="sidebar-item {{ Request::is('members*') ? 'active' : '' }}">
+                    <a href="/members" class='sidebar-link'>
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>Data Anggota</span>
+                    </a>
+                </li>
+
                 <li class="sidebar-item {{ Request::is('borrowings*') ? 'active' : '' }}">
                     <a href="/borrowings" class='sidebar-link'>
                         <i class="bi bi-arrow-left-right"></i>

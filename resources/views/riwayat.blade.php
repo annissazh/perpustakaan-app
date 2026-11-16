@@ -6,6 +6,21 @@
 @section('content')
 <div class="row">
     <div class="col-12">
+        <!-- Menampilkan Pesan Sukses atau Error -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible show fade">
+                <i class="bi bi-check-circle"></i> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible show fade">
+                <i class="bi bi-exclamation-circle"></i> {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <div class="card">
             <div class="card-header">
                 <h4 class="card-title">Daftar Semua Transaksi Anda</h4>
@@ -22,7 +37,7 @@
                                 <th>Batas Kembali</th>
                                 <th>Tanggal Dikembalikan</th>
                                 <th>Status</th>
-                                <th>Denda</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -48,11 +63,16 @@
                                             <span class="badge bg-secondary">{{ ucfirst($item->status) }}</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        @if($item->fine_amount > 0)
-                                            <span class="text-danger fw-bold">Rp{{ number_format($item->fine_amount, 0, ',', '.') }}</span>
+                                    <td class="text-center">
+                                        @if($item->status == 'borrowed')
+                                            <form action="{{ route('riwayat.kembalikan', $item->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mengembalikan buku {{ $item->book->title ?? 'ini' }}?');">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-arrow-return-left"></i> Kembalikan
+                                                </button>
+                                            </form>
                                         @else
-                                            <span class="text-success">-</span>
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                 </tr>
