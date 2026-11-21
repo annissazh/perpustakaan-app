@@ -6,6 +6,7 @@ use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/katalog', [BookController::class, 'katalog'])->name('katalog.index');
     Route::get('/katalog/search-ajax', [BookController::class, 'searchAjax'])->name('katalog.search');
     Route::get('/riwayat', [BorrowingController::class, 'history'])->name('riwayat.index');
+    Route::get('/profil', [ProfileController::class, 'show'])->name('profile.show');
 
     // Manajemen pengguna: admin (superadmin mendapat akses penuh lewat middleware role).
     Route::middleware('role:admin')->group(function () {
@@ -71,6 +73,7 @@ Route::middleware('auth')->group(function () {
         // Sirkulasi & laporan.
         Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
         Route::get('/borrowings/report-pdf', [BorrowingController::class, 'reportPdf'])->name('borrowings.report');
+        Route::get('/borrowings/report-csv', [BorrowingController::class, 'reportCsv'])->name('borrowings.report-csv');
         Route::get('/borrowings/create', [BorrowingController::class, 'create'])->name('borrowings.create');
         Route::post('/borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
         Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'returnBook'])->name('borrowings.return');

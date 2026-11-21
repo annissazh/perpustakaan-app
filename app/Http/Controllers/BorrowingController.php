@@ -14,6 +14,7 @@ use App\Models\Borrowing;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Queries\BorrowingFilter;
+use App\Support\BorrowingReportCsv;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BorrowingController extends Controller
 {
@@ -136,6 +138,26 @@ class BorrowingController extends Controller
         $pdf->setPaper('A4', 'landscape');
 
         return $pdf->stream('laporan-sirkulasi-perpusapp.pdf');
+    }
+
+    /**
+     * Mengekspor laporan sirkulasi ke CSV dengan filter yang sama seperti PDF.
+     */
+    public function reportCsv(Request $request): StreamedResponse
+    {
+        $filters = $this->validateFilters($request);
+
+        $borrowings = BorrowingFilter::make($filters)
+            ->apply(Borrowing::with(['user', 'admin', 'book'])->orderByDesc('borrow_date'))
+            ->get();
+
+        $filename = 'laporan-sirkulasi-'.now()->format('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($borrowings): void {
+            echo BorrowingReportCsv::render($borrowings);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     /**

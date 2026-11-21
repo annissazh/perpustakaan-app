@@ -56,6 +56,13 @@
                     </a>
                 </li>
 
+                <li class="perpus-nav-item {{ Request::is('profil*') ? 'active' : '' }}">
+                    <a href="{{ route('profile.show') }}" class="perpus-nav-link">
+                        <i class="bi bi-person-vcard-fill"></i>
+                        <span>Kartu & Profil</span>
+                    </a>
+                </li>
+
                 @if($user->role->isStaff())
                 <li class="perpus-nav-label">Layanan & Koleksi</li>
 

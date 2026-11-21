@@ -22,6 +22,9 @@
     $sumDenda = $sumDenda ?? $dendaList->sum('fine_amount');
 
     $pinjamanAktifSaya = $pinjamanAktifSaya ?? $dipinjamList->count();
+    $recentActivities = $recentActivities ?? collect();
+    $overdueBorrowings = $overdueBorrowings ?? collect();
+    $overdueCount = $overdueCount ?? 0;
 @endphp
 
 <section class="row">
@@ -173,6 +176,85 @@
                                 </span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if($overdueCount > 0)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-danger border-0 perpus-alert-overdue mb-0 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                    <div>
+                        <strong><i class="bi bi-exclamation-octagon-fill me-1"></i>
+                            {{ $overdueCount }} peminjaman melewati tenggat</strong>
+                        @if(!$isStaff)
+                            <span class="d-block small mt-1">Segera kembalikan buku untuk menghindari denda.</span>
+                        @endif
+                    </div>
+                    <a href="{{ $isStaff ? route('borrowings.index') : route('riwayat.index') }}" class="btn btn-sm btn-danger fw-semibold">
+                        {{ $isStaff ? 'Buka Sirkulasi' : 'Lihat Riwayat' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        <div class="row g-4 mb-2">
+            <div class="col-lg-7">
+                <div class="card h-100 mb-0">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Aktivitas Terbaru</h5>
+                        <span class="badge bg-light-primary text-primary">{{ $recentActivities->count() }} transaksi</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush perpus-activity-list">
+                            @forelse($recentActivities as $activity)
+                                <li class="list-group-item px-4 py-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div>
+                                            <div class="fw-semibold text-dark">
+                                                {{ $activity->book->title ?? 'Buku dihapus' }}
+                                            </div>
+                                            <small class="text-muted">
+                                                @if($isStaff)
+                                                    {{ $activity->user->name ?? 'Anggota' }} &bull;
+                                                @endif
+                                                {{ $activity->created_at->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                        <span class="badge {{ $activity->status->badgeClass() }} fw-semibold">
+                                            {{ $activity->status->label() }}
+                                        </span>
+                                    </div>
+                                </li>
+                            @empty
+                                <li class="list-group-item text-center text-muted py-4">Belum ada aktivitas peminjaman.</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card h-100 mb-0">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-alarm text-danger me-1"></i> Prioritas Kembali</h5>
+                    </div>
+                    <div class="card-body">
+                        @forelse($overdueBorrowings as $item)
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <div class="fw-semibold">{{ $item->book->title ?? '-' }}</div>
+                                    @if($isStaff)
+                                        <small class="text-muted">{{ $item->user->name ?? '-' }}</small>
+                                    @endif
+                                    <small class="text-danger d-block">Tenggat {{ $item->due_date?->format('d M Y') }}</small>
+                                </div>
+                                <i class="bi bi-exclamation-triangle text-danger"></i>
+                            </div>
+                        @empty
+                            <p class="text-muted text-center py-3 mb-0"><i class="bi bi-emoji-smile text-success me-1"></i> Semua buku tepat waktu!</p>
+                        @endforelse
                     </div>
                 </div>
             </div>

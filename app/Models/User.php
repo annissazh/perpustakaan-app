@@ -61,4 +61,12 @@ class User extends Authenticatable
     {
         return $this->role->isStaff();
     }
+
+    /**
+     * Nomor kartu anggota yang ditampilkan pada kartu digital.
+     */
+    public function memberCode(): string
+    {
+        return sprintf('PA-%06d', $this->id);
+    }
 }

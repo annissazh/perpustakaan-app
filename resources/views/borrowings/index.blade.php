@@ -124,10 +124,14 @@
                     <a href="{{ route('borrowings.create') }}" class="btn btn-success">
                         <i class="bi bi-plus-circle me-1"></i> Pinjamkan Buku
                     </a>
-                    <a href="{{ route('borrowings.report', ['filter' => request('filter'), 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
+                    <a href="{{ route('borrowings.report', request()->query()) }}"
                        class="btn btn-danger"
                        target="_blank">
-                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> Cetak Laporan PDF
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
+                    </a>
+                    <a href="{{ route('borrowings.report-csv', request()->query()) }}"
+                       class="btn btn-success">
+                        <i class="bi bi-filetype-csv me-1"></i> CSV
                     </a>
                 </div>
             </div>

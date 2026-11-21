@@ -69,6 +69,26 @@ class DashboardController extends Controller
             $anggotaList = collect();
         }
 
+        $recentActivities = Borrowing::query()
+            ->with(['user', 'book'])
+            ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
+            ->latest()
+            ->take(6)
+            ->get();
+
+        $overdueBorrowings = Borrowing::query()
+            ->with(['user', 'book'])
+            ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
+            ->overdue()
+            ->orderBy('due_date')
+            ->take(5)
+            ->get();
+
+        $overdueCount = Borrowing::query()
+            ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
+            ->overdue()
+            ->count();
+
         return view('dashboard', [
             'isStaff' => $isStaff,
             'canViewMemberStats' => $canViewMemberStats,
@@ -81,6 +101,9 @@ class DashboardController extends Controller
             'sumDenda' => $dendaList->sum('fine_amount'),
             'dendaList' => $dendaList,
             'pinjamanAktifSaya' => $dipinjamList->count(),
+            'recentActivities' => $recentActivities,
+            'overdueBorrowings' => $overdueBorrowings,
+            'overdueCount' => $overdueCount,
         ]);
     }
 }

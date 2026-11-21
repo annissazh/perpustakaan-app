@@ -1,6 +1,15 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('perpus-theme') === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -31,6 +40,17 @@
                         <h1 class="perpus-page-title">@yield('page-title')</h1>
                         <p class="perpus-page-title-sub mb-0 d-none d-md-block">Sistem Informasi Perpustakaan</p>
                     </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <a href="{{ route('katalog.index') }}" class="btn btn-sm btn-light-primary d-none d-md-inline-flex align-items-center" title="Katalog buku">
+                        <i class="bi bi-search me-1"></i> Katalog
+                    </a>
+                    <a href="{{ route('profile.show') }}" class="btn btn-sm btn-light-secondary d-none d-md-inline-flex align-items-center" title="Kartu anggota">
+                        <i class="bi bi-person-vcard me-1"></i> Profil
+                    </a>
+                    <button type="button" class="btn btn-sm perpus-theme-toggle" id="themeToggle" aria-label="Ganti tema tampilan">
+                        <i class="bi bi-moon-stars-fill" id="themeToggleIcon"></i>
+                    </button>
                 </div>
             </div>
 
@@ -175,6 +195,26 @@
                         form.submit();
                     }
                 });
+            });
+
+            const themeToggle = document.getElementById('themeToggle');
+            const themeToggleIcon = document.getElementById('themeToggleIcon');
+
+            function applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                if (themeToggleIcon) {
+                    themeToggleIcon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+                }
+            }
+
+            applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
+
+            themeToggle?.addEventListener('click', function () {
+                const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                try {
+                    localStorage.setItem('perpus-theme', next);
+                } catch (e) {}
             });
 
             // 6. Auto Spinner pada Tombol Submit Form POST/PUT/DELETE (anti double-click)
