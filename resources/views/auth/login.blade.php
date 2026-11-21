@@ -4,44 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PerpusApp</title>
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/auth.css') }}">
-    <!-- CDN Bootstrap Icons agar ikon form muncul -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    @vite(['resources/css/app.css'])
 </head>
 <body>
-    <div id="auth">
-        <div class="row h-100 d-flex justify-content-center align-items-center">
-            <div class="col-lg-5 col-12">
-                <div id="auth-left">
-                    <h1 class="auth-title">Log in.</h1>
-                    <p class="auth-subtitle mb-5">Masuk ke Sistem Manajemen Perpustakaan.</p>
-
-                    <!-- Menampilkan pesan error jika login gagal -->
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-circle"></i> {{ $errors->first() }}
-                        </div>
-                    @endif
-
-                    <form action="/login" method="POST">
-                        @csrf
-                        <div class="form-group position-relative has-icon-left mb-4">
-                            <input type="email" name="email" class="form-control form-control-xl" placeholder="Email" value="{{ old('email') }}" required>
-                            <div class="form-control-icon">
-                                <i class="bi bi-person"></i>
-                            </div>
-                        </div>
-                        <div class="form-group position-relative has-icon-left mb-4">
-                            <input type="password" name="password" class="form-control form-control-xl" placeholder="Password" required>
-                            <div class="form-control-icon">
-                                <i class="bi bi-shield-lock"></i>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-block btn-lg shadow-lg mt-5">Log in</button>
-                    </form>
+    <div class="perpus-auth">
+        <div class="perpus-auth__hero">
+            <div class="perpus-auth__hero-content">
+                <div class="perpus-brand-logo mb-4 d-inline-flex">
+                    <i class="bi bi-journal-bookmark-fill"></i>
                 </div>
+                <h2>Perpustakaan Digital</h2>
+                <p class="mb-0 opacity-90">Kelola koleksi, sirkulasi, dan layanan membaca dalam satu platform yang modern.</p>
+            </div>
+        </div>
+
+        <div class="perpus-auth__panel">
+            <div class="perpus-auth__card">
+                <h1 class="h3 fw-bold mb-1">Selamat datang</h1>
+                <p class="text-muted mb-4">Masuk ke akun PerpusApp Anda</p>
+
+                @if($errors->any())
+                    <div class="alert alert-danger border-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>{{ $errors->first() }}</span>
+                    </div>
+                @endif
+
+                <form action="{{ route('login.store') }}" method="POST" class="d-flex flex-column gap-3">
+                    @csrf
+                    <div class="perpus-auth__input-wrap">
+                        <i class="bi bi-envelope perpus-auth__input-icon"></i>
+                        <input type="email" name="email" class="form-control" placeholder="Alamat email" value="{{ old('email') }}" required autofocus>
+                    </div>
+                    <div class="perpus-auth__input-wrap">
+                        <i class="bi bi-shield-lock perpus-auth__input-icon"></i>
+                        <input type="password" name="password" class="form-control" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-2">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Masuk
+                    </button>
+                </form>
             </div>
         </div>
     </div>

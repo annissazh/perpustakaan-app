@@ -2,166 +2,218 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBookRequest;
+use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Category;
+use App\Models\SystemSetting;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class BookController extends Controller
 {
-    public function index()
+    /**
+     * Menampilkan daftar buku.
+     */
+    public function index(): View
     {
-        $books = Book::with('category')->latest()->get();
+        $books = Book::with('category')
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
         return view('books.index', compact('books'));
     }
 
-    public function show($id)
+    /**
+     * Menampilkan detail buku.
+     */
+    public function show(Book $book): View
     {
-        $book = Book::with('category')->findOrFail($id);
+        $book->load('category');
+
         return view('books.show', compact('book'));
     }
 
-    public function create()
+    /**
+     * Menampilkan form tambah buku.
+     */
+    public function create(): View
     {
-        $categories = Category::all();
+        $categories = Category::orderBy('name')->get();
+
         return view('books.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menyimpan buku baru.
+     */
+    public function store(StoreBookRequest $request): RedirectResponse
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'author' => 'required|string|max:255',
-            'publisher' => 'nullable|string|max:255', // Validasi penerbit ditambahkan
-            'isbn' => 'required|string|unique:books,isbn',
-            'published_year' => 'required|integer',
-            'total_stock' => 'required|integer|min:1',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', 
+        $book = new Book([
+            'category_id' => $request->integer('category_id'),
+            'title' => $request->string('title')->toString(),
+            'author' => $request->string('author')->toString(),
+            'publisher' => $request->filled('publisher') ? $request->string('publisher')->toString() : null,
+            'isbn' => $request->string('isbn')->toString(),
+            'published_year' => $request->integer('published_year'),
+            'total_stock' => $request->integer('total_stock'),
+            'fine_per_day' => $request->filled('fine_per_day')
+                ? $request->integer('fine_per_day')
+                : SystemSetting::getInt('denda_per_hari', 1000),
+            'cover_image' => $this->storeCoverImage($request),
         ]);
 
-        $coverImagePath = null;
-        if ($request->hasFile('cover_image')) {
-            $coverImagePath = $request->file('cover_image')->store('covers', 'public');
-        }
+        // Stok tersedia selalu sama dengan stok total saat buku baru dibuat.
+        $book->available_stock = $book->total_stock;
+        $book->save();
 
-        Book::create([
-            'title' => $request->title,
-            'category_id' => $request->category_id,
-            'author' => $request->author,
-            'publisher' => $request->publisher, // Menyimpan penerbit
-            'isbn' => $request->isbn,
-            'published_year' => $request->published_year,
-            'total_stock' => $request->total_stock,
-            'available_stock' => $request->total_stock, 
-            'cover_image' => $coverImagePath,
-        ]);
-
-        return redirect('/books')->with('success', 'Buku berhasil ditambahkan!');
+        return redirect()->route('books.index')
+            ->with('success', 'Buku berhasil ditambahkan!');
     }
 
-    // Menampilkan halaman form edit
-    public function edit($id)
+    /**
+     * Menampilkan form edit buku.
+     */
+    public function edit(Book $book): View
     {
-        $book = Book::findOrFail($id);
-        $categories = Category::all();
+        $categories = Category::orderBy('name')->get();
+
         return view('books.edit', compact('book', 'categories'));
     }
 
-    // Memproses pembaruan data ke database
-    public function update(Request $request, $id)
+    /**
+     * Memperbarui data buku.
+     */
+    public function update(UpdateBookRequest $request, Book $book): RedirectResponse
     {
-        $book = Book::findOrFail($id);
-
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'author' => 'required|string|max:255',
-            'publisher' => 'nullable|string|max:255', // Validasi penerbit ditambahkan
-            'isbn' => 'required|string|unique:books,isbn,' . $id, 
-            'published_year' => 'required|integer',
-            'total_stock' => 'required|integer|min:1',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', 
-        ]);
-
-        $coverImagePath = $book->cover_image; 
+        $coverImagePath = $book->cover_image;
 
         if ($request->hasFile('cover_image')) {
-            // Hapus gambar lama jika ada
-            if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
-                Storage::disk('public')->delete($book->cover_image);
-            }
+            $this->deleteCoverImage($book);
             $coverImagePath = $request->file('cover_image')->store('covers', 'public');
         }
 
-        // Hitung selisih stok agar available_stock tetap sinkron
-        $stockDifference = $request->total_stock - $book->total_stock;
-        $newAvailableStock = $book->available_stock + $stockDifference;
+        $borrowedCopies = $book->activeBorrowings()->count();
 
-        $book->update([
-            'title' => $request->title,
-            'category_id' => $request->category_id,
-            'author' => $request->author,
-            'publisher' => $request->publisher, // Update penerbit
-            'isbn' => $request->isbn,
-            'published_year' => $request->published_year,
-            'total_stock' => $request->total_stock,
-            'available_stock' => $newAvailableStock,
+        $book->fill([
+            'category_id' => $request->integer('category_id'),
+            'title' => $request->string('title')->toString(),
+            'author' => $request->string('author')->toString(),
+            'publisher' => $request->filled('publisher') ? $request->string('publisher')->toString() : null,
+            'isbn' => $request->string('isbn')->toString(),
+            'published_year' => $request->integer('published_year'),
+            'total_stock' => $request->integer('total_stock'),
+            'fine_per_day' => $request->filled('fine_per_day')
+                ? $request->integer('fine_per_day')
+                : $book->fine_per_day,
             'cover_image' => $coverImagePath,
         ]);
 
-        return redirect('/books')->with('success', 'Data buku berhasil diperbarui!');
+        // Stok tersedia diturunkan dari stok total dikurangi buku yang sedang dipinjam
+        // sehingga tidak pernah menjadi negatif.
+        $book->available_stock = max(0, $book->total_stock - $borrowedCopies);
+        $book->save();
+
+        return redirect()->route('books.index')
+            ->with('success', 'Data buku berhasil diperbarui!');
     }
 
-    public function destroy($id)
+    /**
+     * Menghapus buku.
+     */
+    public function destroy(Book $book): RedirectResponse
     {
-        $book = Book::findOrFail($id);
-
-        if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
-            Storage::disk('public')->delete($book->cover_image);
+        if ($book->activeBorrowings()->exists()) {
+            return redirect()->route('books.index')
+                ->with('error', 'Buku masih dipinjam sehingga tidak dapat dihapus.');
         }
 
+        $this->deleteCoverImage($book);
         $book->delete();
-        return redirect('/books')->with('success', 'Buku beserta sampulnya berhasil dihapus!');
+
+        return redirect()->route('books.index')
+            ->with('success', 'Buku beserta sampulnya berhasil dihapus!');
     }
 
-    public function katalog(Request $request)
+    /**
+     * Katalog buku yang dapat dicari dan difilter.
+     */
+    public function katalog(Request $request): View
     {
-        $query = Book::with('category')->latest();
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
 
-        // Fitur pencarian berdasarkan judul atau penulis
-        if ($request->has('search') && $request->search != '') {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('author', 'like', '%' . $request->search . '%');
-            });
-        }
+        $books = Book::with('category')
+            ->when(
+                $filters['search'] ?? null,
+                fn (Builder $query, string $search) => $query->where(function (Builder $query) use ($search): void {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('author', 'like', "%{$search}%");
+                })
+            )
+            ->when(
+                $filters['category'] ?? null,
+                fn (Builder $query, int $categoryId) => $query->where('category_id', $categoryId)
+            )
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
 
-        // Fitur filter berdasarkan kategori
-        if ($request->has('category') && $request->category != '') {
-            $query->where('category_id', $request->category);
-        }
-
-        $books = $query->get();
-        $categories = Category::all();
+        $categories = Category::orderBy('name')->get();
 
         return view('katalog', compact('books', 'categories'));
     }
 
-    // Fungsi khusus untuk merespons AJAX pencarian katalog secara live
-    public function searchAjax(Request $request)
+    /**
+     * Respon JSON untuk live search pada katalog.
+     */
+    public function searchAjax(Request $request): JsonResponse
     {
-        $query = $request->search;
-        
-        if (strlen($query) >= 3) {
-            $books = Book::where('title', 'like', "%{$query}%")
-                         ->orWhere('author', 'like', "%{$query}%")
-                         ->select('id', 'title', 'author')
-                         ->take(5) // Batasi maksimal 5 hasil di dropdown
-                         ->get();
-            return response()->json($books);
+        $search = trim((string) $request->query('search', ''));
+
+        if (mb_strlen($search) < 3) {
+            return response()->json([]);
         }
-        
-        return response()->json([]);
+
+        $books = Book::query()
+            ->where(function (Builder $query) use ($search): void {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%");
+            })
+            ->select(['id', 'title', 'author'])
+            ->orderBy('title')
+            ->take(5)
+            ->get();
+
+        return response()->json($books);
+    }
+
+    /**
+     * Menyimpan file sampul buku.
+     */
+    private function storeCoverImage(Request $request): ?string
+    {
+        if (! $request->hasFile('cover_image')) {
+            return null;
+        }
+
+        return $request->file('cover_image')->store('covers', 'public');
+    }
+
+    /**
+     * Menghapus file sampul buku.
+     */
+    private function deleteCoverImage(Book $book): void
+    {
+        if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
+            Storage::disk('public')->delete($book->cover_image);
+        }
     }
 }

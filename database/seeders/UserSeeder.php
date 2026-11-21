@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -12,6 +13,38 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        $users = [
+            [
+                'name' => 'Superadmin Perpus',
+                'email' => 'superadmin@perpus.com',
+                'role' => Role::Superadmin->value,
+            ],
+            [
+                'name' => 'Admin Perpustakaan',
+                'email' => 'admin@perpus.com',
+                'role' => Role::Admin->value,
+            ],
+            [
+                'name' => 'Petugas Perpustakaan',
+                'email' => 'petugas@perpus.com',
+                'role' => Role::Petugas->value,
+            ],
+            [
+                'name' => 'Anggota Perpustakaan',
+                'email' => 'anggota@perpus.com',
+                'role' => Role::Anggota->value,
+            ],
+        ];
+
+        foreach ($users as $user) {
+            User::query()->updateOrCreate(
+                ['email' => $user['email']],
+                [
+                    'name' => $user['name'],
+                    'role' => $user['role'],
+                    'password' => 'password123',
+                ]
+            );
+        }
     }
 }

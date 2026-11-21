@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    // Menampilkan halaman login
-    public function login()
+    /**
+     * Menampilkan halaman login.
+     */
+    public function login(): View
     {
         return view('auth.login');
     }
 
-    // Memproses data login
-    public function authenticate(Request $request)
+    /**
+     * Memproses data login.
+     */
+    public function authenticate(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -23,23 +29,26 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            // Redirect ke halaman utama setelah berhasil login
-            return redirect()->intended('/');
+
+            return redirect()->intended(route('dashboard'));
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password yang Anda masukkan salah.',
-        ])->onlyInput('email');
+        return back()
+            ->withErrors([
+                'email' => 'Email atau password yang Anda masukkan salah.',
+            ])
+            ->onlyInput('email');
     }
 
-    // Memproses logout
-    public function logout(Request $request)
+    /**
+     * Memproses logout.
+     */
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
-        return redirect('/login');
+
+        return redirect()->route('login');
     }
 }

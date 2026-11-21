@@ -4,21 +4,68 @@
 @section('page-title', 'Dashboard Perpustakaan')
 
 @section('content')
+@php
+    $currentUser = Auth::user();
+    $isStaff = $currentUser->role->isStaff();
+    $canViewMemberStats = $canViewMemberStats ?? $currentUser->role->canManageUsers();
+
+    // Seluruh data statistik & rincian modal sudah disiapkan oleh
+    // DashboardController agar query tidak terduplikasi di layer view.
+    $booksList = $booksList ?? collect();
+    $anggotaList = $anggotaList ?? collect();
+    $dipinjamList = $dipinjamList ?? collect();
+    $dendaList = $dendaList ?? collect();
+
+    $countBuku = $countBuku ?? $booksList->count();
+    $countAnggota = $countAnggota ?? $anggotaList->count();
+    $countDipinjam = $countDipinjam ?? $dipinjamList->count();
+    $sumDenda = $sumDenda ?? $dendaList->sum('fine_amount');
+
+    $pinjamanAktifSaya = $pinjamanAktifSaya ?? $dipinjamList->count();
+@endphp
+
 <section class="row">
     <div class="col-12">
         
-        <!-- Banner Selamat Datang (Terlihat oleh Semua Role) -->
+        <!-- Banner Selamat Datang -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card mb-0">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar avatar-xl bg-primary me-4">
-                                <span class="avatar-content text-uppercase fs-3">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                <div class="card perpus-welcome-card mb-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar-xl bg-primary me-3 me-md-4 flex-shrink-0">
+                                    <span class="avatar-content text-uppercase fs-3 fw-bold">{{ substr($currentUser->name, 0, 1) }}</span>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Selamat datang kembali, {{ $currentUser->name }}!</h4>
+                                    <p class="mb-0 text-muted">
+                                        Anda login sebagai 
+                                        <span class="badge bg-light-primary text-primary fw-semibold">{{ $currentUser->role->label() }}</span>
+                                        @if(!$isStaff)
+                                            &bull; Sedang meminjam <strong class="text-dark">{{ $pinjamanAktifSaya }} Buku</strong>
+                                        @endif
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 class="mb-1">Selamat datang kembali, {{ Auth::user()->name }}!</h4>
-                                <p class="mb-0 text-muted">Anda login sebagai <span class="badge bg-light-primary">{{ ucfirst(Auth::user()->role) }}</span>.</p>
+
+                            <!-- Aksi Cepat Sesuai Role -->
+                            <div class="d-flex flex-wrap gap-2">
+                                @if($isStaff)
+                                    <a href="{{ route('borrowings.index') }}" class="btn btn-primary">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
+                                    </a>
+                                    <a href="{{ route('books.index') }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-book-half me-1"></i> Data Buku
+                                    </a>
+                                @else
+                                    <a href="{{ route('katalog.index') }}" class="btn btn-primary">
+                                        <i class="bi bi-search me-1"></i> Jelajahi Katalog
+                                    </a>
+                                    <a href="{{ route('riwayat.index') }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-clock-history me-1"></i> Riwayat Saya
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -26,156 +73,165 @@
             </div>
         </div>
 
-        <!-- Pemisahan Tampilan Berdasarkan Role -->
-        @if(Auth::user()->role == 'anggota')
-            
-            <!-- TAMPILAN KHUSUS MAHASISWA / ANGGOTA -->
-            <div class="row">
-                <div class="col-6 col-md-4">
-                    <div class="card">
-                        <div class="card-body px-4 py-4-5">
-                            <div class="row">
-                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start ">
-                                    <div class="stats-icon blue mb-2">
-                                        <i class="bi bi-book"></i>
-                                    </div>
-                                </div>
-                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                    <h6 class="text-muted font-semibold">Sedang Dipinjam</h6>
-                                    <h6 class="font-extrabold mb-0">{{ $pinjamanSaya }} Buku</h6>
+        <!-- 4 Kartu Statistik Interaktif (Bisa Diklik Semua Role) -->
+        <div class="row g-3">
+            <!-- 1. Total Koleksi -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#koleksiBukuModal"
+                     title="Klik untuk melihat rincian koleksi buku">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon purple mb-2">
+                                    <i class="bi bi-book-half"></i>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-12 col-md-8">
-                    <div class="alert alert-light-primary color-primary h-100 d-flex flex-column justify-content-center">
-                        <h4 class="alert-heading"><i class="bi bi-info-circle"></i> Mulai Membaca!</h4>
-                        <p>Silakan telusuri koleksi buku terbaru kami atau cek tenggat waktu pengembalian buku di menu riwayat Anda.</p>
-                        <div class="mt-2">
-                            <a href="/katalog" class="btn btn-primary btn-sm me-2">Ke Katalog Buku</a>
-                            <a href="/riwayat" class="btn btn-outline-primary btn-sm">Lihat Riwayat</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        @else
-            
-            <!-- TAMPILAN KHUSUS ADMIN & PETUGAS (4 Statistik Wajib) -->
-            <div class="row">
-                <!-- Card 1: Jumlah Judul Buku -->
-                <div class="col-6 col-lg-3 col-md-6">
-                    <div class="card" data-bs-toggle="modal" data-bs-target="#koleksiBukuModal" style="cursor: pointer; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk lihat rincian stok">
-                        <div class="card-body px-4 py-4-5">
-                            <div class="row">
-                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start ">
-                                    <div class="stats-icon purple mb-2"><i class="bi bi-book-half"></i></div>
-                                </div>
-                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                    <h6 class="text-muted font-semibold">Judul Buku</h6>
-                                    <h6 class="font-extrabold mb-0">{{ $totalBuku }} Judul</h6>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2: Jumlah Stok Buku -->
-                <div class="col-6 col-lg-3 col-md-6">
-                    <div class="card" data-bs-toggle="modal" data-bs-target="#koleksiBukuModal" style="cursor: pointer; transition: 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Klik untuk lihat rincian stok">
-                        <div class="card-body px-4 py-4-5">
-                            <div class="row">
-                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start ">
-                                    <div class="stats-icon red mb-2"><i class="bi bi-stack"></i></div>
-                                </div>
-                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                    <h6 class="text-muted font-semibold">Total Stok Buku</h6>
-                                    <h6 class="font-extrabold mb-0">{{ $totalStokBuku }} Buku</h6>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 3: Jumlah Member -->
-                <div class="col-6 col-lg-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body px-4 py-4-5">
-                            <div class="row">
-                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start ">
-                                    <div class="stats-icon blue mb-2"><i class="bi bi-people-fill"></i></div>
-                                </div>
-                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                    <h6 class="text-muted font-semibold">Total Anggota</h6>
-                                    <h6 class="font-extrabold mb-0">{{ $totalAnggota }}</h6>
-                                    <span class="badge bg-light-secondary text-dark mt-2" style="font-size: 0.7rem;">Khusus Peminjam</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Card 4: Jumlah Sedang Dipinjam -->
-                <div class="col-6 col-lg-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body px-4 py-4-5">
-                            <div class="row">
-                                <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start ">
-                                    <div class="stats-icon green mb-2"><i class="bi bi-arrow-left-right"></i></div>
-                                </div>
-                                <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                    <h6 class="text-muted font-semibold">Buku Dipinjam</h6>
-                                    <h6 class="font-extrabold mb-0">{{ $bukuDipinjam }}</h6>
-                                </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Total Koleksi</h6>
+                                <h5 class="font-extrabold mb-1">{{ $countBuku }} Judul</h5>
+                                <span class="text-primary fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Lihat rincian
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        @endif
+
+            @if($canViewMemberStats)
+            <!-- 2. Total Anggota -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#anggotaModal"
+                     title="Klik untuk melihat daftar anggota">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon blue mb-2">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Total Anggota</h6>
+                                <h5 class="font-extrabold mb-1">{{ $countAnggota }}</h5>
+                                <span class="text-info fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Khusus peminjam
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+            
+            <!-- 3. Buku Dipinjam -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#bukuDipinjamModal"
+                     title="Klik untuk melihat daftar buku yang sedang dipinjam">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon green mb-2">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Buku Dipinjam</h6>
+                                <h5 class="font-extrabold mb-1">{{ $countDipinjam }}</h5>
+                                <span class="text-success fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Lihat rincian
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Total Denda -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#totalDendaModal"
+                     title="Klik untuk melihat rincian transaksi denda">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon red mb-2">
+                                    <i class="bi bi-cash-stack"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Total Denda</h6>
+                                <h5 class="font-extrabold mb-1">Rp{{ number_format($sumDenda, 0, ',', '.') }}</h5>
+                                <span class="text-danger fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Lihat rincian
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 </section>
+@endsection
 
-<!-- Modal Popup Detail Koleksi Buku (Khusus Admin/Petugas) -->
-@if(Auth::user()->role != 'anggota')
+@push('modals')
+<!-- 1. Modal Rincian Total Koleksi -->
 <div class="modal fade" id="koleksiBukuModal" tabindex="-1" aria-labelledby="koleksiBukuModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary">
-                <h5 class="modal-title text-white" id="koleksiBukuModalLabel"><i class="bi bi-journal-text"></i> Rincian Stok Koleksi Buku</h5>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title text-white" id="koleksiBukuModalLabel">
+                    <i class="bi bi-journal-text me-2"></i>Rincian Stok Koleksi Buku
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalKoleksi" placeholder="Filter judul buku atau penulis...">
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
+                    <table class="table table-hover align-middle mb-0" id="tableModalKoleksi">
                         <thead class="table-light">
                             <tr>
-                                <th>No</th>
+                                <th style="width: 55px;">No</th>
                                 <th>Judul Buku</th>
-                                <th class="text-center">Stok Total</th>
-                                <th class="text-center">Stok Tersedia</th>
+                                <th class="text-center" style="width: 120px;">Stok Total</th>
+                                <th class="text-center" style="width: 140px;">Stok Tersedia</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($booksData as $index => $book)
+                            @forelse($booksList as $index => $book)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $book->title }}</td>
-                                <td class="text-center"><span class="badge bg-secondary">{{ $book->total_stock }}</span></td>
+                                <td class="text-muted">{{ $index + 1 }}</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ $book->title }}</div>
+                                    <small class="text-muted">{{ $book->author }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light-secondary text-dark">{{ $book->total_stock }}</span>
+                                </td>
                                 <td class="text-center">
                                     @if($book->available_stock > 0)
-                                        <span class="badge bg-success">{{ $book->available_stock }}</span>
+                                        <span class="badge bg-light-success text-success">{{ $book->available_stock }} Tersedia</span>
                                     @else
-                                        <span class="badge bg-danger">Habis</span>
+                                        <span class="badge bg-light-danger text-danger">Habis</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="4" class="text-center">Belum ada koleksi buku.</td>
+                                <td colspan="4" class="text-center text-muted py-4">Belum ada koleksi buku.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -183,10 +239,266 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-light-secondary" data-bs-dismiss="modal">Tutup</button>
+                @if($isStaff)
+                    <a href="{{ route('books.index') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-gear me-1"></i> Kelola Data Buku
+                    </a>
+                @else
+                    <a href="{{ route('katalog.index') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-journal-bookmark-fill me-1"></i> Buka Katalog
+                    </a>
+                @endif
+                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if($canViewMemberStats)
+<!-- 2. Modal Rincian Total Anggota -->
+<div class="modal fade" id="anggotaModal" tabindex="-1" aria-labelledby="anggotaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title text-white" id="anggotaModalLabel">
+                    <i class="bi bi-people-fill me-2"></i>Daftar Anggota Peminjam ({{ $countAnggota }})
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalAnggota" placeholder="Filter nama anggota...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tableModalAnggota">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 55px;">No</th>
+                                <th>Nama Anggota</th>
+                                @if($isStaff)
+                                    <th>Email</th>
+                                @endif
+                                <th class="text-center" style="width: 140px;">Tgl Terdaftar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($anggotaList as $index => $anggota)
+                            <tr>
+                                <td class="text-muted">{{ $index + 1 }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm bg-primary me-2 flex-shrink-0">
+                                            <span class="avatar-content text-uppercase fw-bold" style="font-size: 0.72rem;">
+                                                {{ substr($anggota->name, 0, 1) }}
+                                            </span>
+                                        </div>
+                                        <span class="fw-semibold text-dark">{{ $anggota->name }}</span>
+                                    </div>
+                                </td>
+                                @if($isStaff)
+                                    <td class="text-muted">{{ $anggota->email }}</td>
+                                @endif
+                                <td class="text-center text-muted">
+                                    {{ \Carbon\Carbon::parse($anggota->created_at)->format('d M Y') }}
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="{{ $isStaff ? 4 : 3 }}" class="text-center text-muted py-4">Belum ada anggota terdaftar.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                @if($currentUser->role->canManageUsers())
+                    <a href="{{ route('users.index') }}" class="btn btn-info text-white btn-sm">
+                        <i class="bi bi-people me-1"></i> Manajemen User
+                    </a>
+                @endif
+                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
 </div>
 @endif
-@endsection
+
+<!-- 3. Modal Rincian Buku Sedang Dipinjam -->
+<div class="modal fade" id="bukuDipinjamModal" tabindex="-1" aria-labelledby="bukuDipinjamModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title text-white" id="bukuDipinjamModalLabel">
+                    <i class="bi bi-arrow-left-right me-2"></i>Rincian Buku Sedang Dipinjam ({{ $countDipinjam }})
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalDipinjam" placeholder="Filter judul buku atau nama peminjam...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tableModalDipinjam">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 55px;">No</th>
+                                <th>Judul Buku</th>
+                                <th>Peminjam</th>
+                                <th class="text-center">Tgl Pinjam</th>
+                                <th class="text-center">Batas Kembali</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($dipinjamList as $index => $pinjam)
+                            @php
+                                $dueDate = $pinjam->due_date?->copy()->startOfDay() ?? now()->startOfDay();
+                                $isLate = $pinjam->isOverdue();
+                            @endphp
+                            <tr>
+                                <td class="text-muted">{{ $index + 1 }}</td>
+                                <td class="fw-semibold text-dark">{{ $pinjam->book->title ?? 'Buku Dihapus' }}</td>
+                                <td>{{ $pinjam->user->name ?? 'User Dihapus' }}</td>
+                                <td class="text-center">{{ \Carbon\Carbon::parse($pinjam->borrow_date)->format('d M Y') }}</td>
+                                <td class="text-center">
+                                    <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
+                                        {{ $dueDate->format('d M Y') }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if($isLate)
+                                        <span class="badge bg-light-danger text-danger">Terlambat</span>
+                                    @else
+                                        <span class="badge bg-light-warning text-warning">Dipinjam</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Tidak ada buku yang sedang dipinjam saat ini.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                @if($isStaff)
+                    <a href="{{ route('borrowings.index') }}" class="btn btn-success btn-sm">
+                        <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
+                    </a>
+                @else
+                    <a href="{{ route('riwayat.index') }}" class="btn btn-success btn-sm">
+                        <i class="bi bi-clock-history me-1"></i> Riwayat Saya
+                    </a>
+                @endif
+                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Rincian Total Denda -->
+<div class="modal fade" id="totalDendaModal" tabindex="-1" aria-labelledby="totalDendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title text-white" id="totalDendaModalLabel">
+                    <i class="bi bi-cash-stack me-2"></i>Rincian Transaksi Terkena Denda
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalDenda" placeholder="Filter judul buku atau nama peminjam...">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tableModalDenda">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 55px;">No</th>
+                                <th>Judul Buku</th>
+                                <th>Peminjam</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Nominal Denda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($dendaList as $index => $denda)
+                            <tr>
+                                <td class="text-muted">{{ $index + 1 }}</td>
+                                <td class="fw-semibold text-dark">{{ $denda->book->title ?? 'Buku Dihapus' }}</td>
+                                <td>{{ $denda->user->name ?? 'User Dihapus' }}</td>
+                                <td class="text-center">
+                                    @if($denda->status === \App\Enums\BorrowingStatus::Returned)
+                                        <span class="badge bg-light-success text-success">Dikembalikan</span>
+                                    @elseif($denda->status === \App\Enums\BorrowingStatus::Lost)
+                                        <span class="badge bg-light-dark text-dark">Hilang</span>
+                                    @else
+                                        <span class="badge bg-light-danger text-danger">Terlambat</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-light-danger text-danger fw-bold">
+                                        Rp{{ number_format($denda->fine_amount, 0, ',', '.') }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Belum ada catatan denda keterlambatan.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="fw-bold text-danger">
+                    Total Akumulasi: Rp{{ number_format($sumDenda, 0, ',', '.') }}
+                </div>
+                <div class="d-flex gap-2">
+                    @if($isStaff)
+                        <a href="{{ route('borrowings.index') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-file-earmark-text me-1"></i> Lihat Sirkulasi
+                        </a>
+                    @else
+                        <a href="{{ route('riwayat.index') }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-clock-history me-1"></i> Riwayat Saya
+                        </a>
+                    @endif
+                    <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.modal-table-search').forEach(input => {
+            input.addEventListener('keyup', function () {
+                const keyword = this.value.toLowerCase();
+                const tableId = this.dataset.targetTable;
+                const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(keyword) ? '' : 'none';
+                });
+            });
+        });
+    });
+</script>
+@endpush

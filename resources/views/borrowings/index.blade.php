@@ -4,18 +4,84 @@
 @section('page-title', 'Data Sirkulasi & Laporan')
 
 @section('content')
+@php
+    // Statistik dihitung pada controller agar konsisten dengan filter aktif.
+    $totalTransaksi = $stats['total'];
+    $aktifDipinjam = $stats['dipinjam'];
+    $terlambatCount = $stats['terlambat'];
+    $selesaiCount = $stats['selesai'];
+@endphp
 
-<!-- KOTAK FILTER -->
+<!-- Ringkasan Statistik Sirkulasi -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card card-stat h-100 mb-0">
+            <div class="card-body px-3 px-md-4 py-3 d-flex align-items-center">
+                <div class="stats-icon purple me-3 flex-shrink-0">
+                    <i class="bi bi-arrow-left-right"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted font-semibold mb-1">Total Transaksi</h6>
+                    <h5 class="font-extrabold mb-0">{{ $totalTransaksi }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card card-stat h-100 mb-0">
+            <div class="card-body px-3 px-md-4 py-3 d-flex align-items-center">
+                <div class="stats-icon blue me-3 flex-shrink-0">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted font-semibold mb-1">Sedang Dipinjam</h6>
+                    <h5 class="font-extrabold mb-0">{{ $aktifDipinjam }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card card-stat h-100 mb-0">
+            <div class="card-body px-3 px-md-4 py-3 d-flex align-items-center">
+                <div class="stats-icon red me-3 flex-shrink-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted font-semibold mb-1">Terlambat</h6>
+                    <h5 class="font-extrabold mb-0 {{ $terlambatCount > 0 ? 'text-danger' : '' }}">{{ $terlambatCount }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="card card-stat h-100 mb-0">
+            <div class="card-body px-3 px-md-4 py-3 d-flex align-items-center">
+                <div class="stats-icon green me-3 flex-shrink-0">
+                    <i class="bi bi-check2-all"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted font-semibold mb-1">Dikembalikan</h6>
+                    <h5 class="font-extrabold mb-0">{{ $selesaiCount }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Laporan -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title"><i class="bi bi-funnel-fill"></i> Filter Laporan</h4>
+        <div class="card mb-0">
+            <div class="card-header pb-2">
+                <h5 class="card-title mb-0"><i class="bi bi-funnel-fill text-primary me-1"></i> Filter Periode Laporan</h5>
             </div>
             <div class="card-body">
-                <form action="/borrowings" method="GET" class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="mb-2">Periode Cepat</label>
+                <form action="{{ route('borrowings.index') }}" method="GET" class="row g-3 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold">Periode Cepat</label>
                         <select class="form-select" name="filter">
                             <option value="">Semua Waktu</option>
                             <option value="hari_ini" {{ request('filter') == 'hari_ini' ? 'selected' : '' }}>Hari Ini</option>
@@ -23,17 +89,21 @@
                             <option value="tahun_ini" {{ request('filter') == 'tahun_ini' ? 'selected' : '' }}>Tahun Ini</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="mb-2">Dari Tanggal (Opsional)</label>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold">Dari Tanggal</label>
                         <input type="date" class="form-control" name="start_date" value="{{ request('start_date') }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="mb-2">Sampai Tanggal (Opsional)</label>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold">Sampai Tanggal</label>
                         <input type="date" class="form-control" name="end_date" value="{{ request('end_date') }}">
                     </div>
-                    <div class="col-md-3 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Terapkan</button>
-                        <a href="/borrowings" class="btn btn-light-secondary"><i class="bi bi-arrow-clockwise"></i> Reset</a>
+                    <div class="col-12 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-search me-1"></i> Terapkan
+                        </button>
+                        <a href="{{ route('borrowings.index') }}" class="btn btn-light-secondary" data-bs-toggle="tooltip" title="Reset Filter">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
                     </div>
                 </form>
             </div>
@@ -41,81 +111,152 @@
     </div>
 </div>
 
-<!-- TABEL DATA -->
+<!-- Tabel Transaksi Sirkulasi -->
 <div class="row">
     <div class="col-12">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible show fade">
-                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-danger alert-dismissible show fade">
-                <i class="bi bi-exclamation-circle"></i> {{ $errors->first() }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title">Daftar Transaksi Peminjaman</h4>
-                <div class="d-flex gap-2">
-                    <a href="/borrowings/create" class="btn btn-success"><i class="bi bi-plus-circle"></i> Pinjamkan Buku</a>
-                    <!-- Tombol Cetak PDF membawa parameter query string agar PDF terfilter -->
-                    <a href="/borrowings/report-pdf?filter={{ request('filter') }}&start_date={{ request('start_date') }}&end_date={{ request('end_date') }}" class="btn btn-danger" target="_blank">
-                        <i class="bi bi-file-earmark-pdf-fill"></i> Cetak Laporan PDF
+            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <h4 class="card-title mb-1">Daftar Transaksi Peminjaman</h4>
+                    <p class="text-muted small mb-0">Kelola peminjaman aktif, pengembalian buku, dan cetak laporan PDF.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ route('borrowings.create') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-1"></i> Pinjamkan Buku
+                    </a>
+                    <a href="{{ route('borrowings.report', ['filter' => request('filter'), 'start_date' => request('start_date'), 'end_date' => request('end_date')]) }}"
+                       class="btn btn-danger"
+                       target="_blank">
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> Cetak Laporan PDF
                     </a>
                 </div>
             </div>
+
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="table1">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Peminjam</th>
-                                <th>Judul Buku</th>
-                                <th>Tgl Pinjam</th>
-                                <th>Batas Kembali</th>
-                                <th>Status</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($borrowings as $index => $row)
+                @if($borrowings->isEmpty())
+                    <div class="text-center py-5">
+                        <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                            <i class="bi bi-journal-x fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Tidak Ada Data Transaksi</h5>
+                        <p class="text-muted mb-3">Belum ada transaksi peminjaman pada periode yang dipilih.</p>
+                        <a href="{{ route('borrowings.create') }}" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Catat Peminjaman Baru
+                        </a>
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="table1">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $row->user->name ?? 'Terhapus' }}</td>
-                                    <td>{{ $row->book->title ?? 'Terhapus' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($row->borrow_date)->format('d M Y') }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($row->due_date)->format('d M Y') }}</td>
-                                    <td>
-                                        @if($row->status == 'borrowed') 
-                                            <span class="badge bg-warning">Dipinjam</span>
-                                        @elseif($row->status == 'returned') 
-                                            <span class="badge bg-success">Dikembalikan</span>
-                                        @elseif($row->status == 'overdue') 
-                                            <span class="badge bg-danger">Terlambat</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        @if($row->status == 'borrowed' || $row->status == 'overdue')
-                                            <form action="/borrowings/{{ $row->id }}/return" method="POST" onsubmit="return confirm('Proses pengembalian buku ini?');">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-primary">Kembalikan</button>
-                                            </form>
-                                        @else
-                                            <span class="text-muted"><i class="bi bi-check2-all"></i> Selesai</span>
-                                        @endif
-                                    </td>
+                                    <th style="width: 55px;">No</th>
+                                    <th>Peminjam</th>
+                                    <th>Judul Buku</th>
+                                    <th>Tgl Pinjam</th>
+                                    <th>Batas Kembali</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center" style="width: 150px;">Aksi</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach ($borrowings as $index => $row)
+                                    @php
+                                        $dueDate = $row->due_date?->copy()->startOfDay() ?? now()->startOfDay();
+                                        $isLate = $row->isOverdue();
+                                    @endphp
+                                    <tr>
+                                        <td class="text-muted">{{ $index + 1 }}</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ $row->user->name ?? 'User Terhapus' }}</div>
+                                            @if($row->user)
+                                                <small class="text-muted">{{ $row->user->email }}</small>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ $row->book->title ?? 'Buku Terhapus' }}</div>
+                                            @if($row->fine_amount > 0)
+                                                <small class="text-danger fw-bold">
+                                                    Denda: Rp{{ number_format($row->fine_amount, 0, ',', '.') }}
+                                                </small>
+                                            @endif
+                                        </td>
+                                        <td>{{ \Carbon\Carbon::parse($row->borrow_date)->format('d M Y') }}</td>
+                                        <td>
+                                            <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
+                                                {{ $dueDate->format('d M Y') }}
+                                            </span>
+                                            @if($isLate)
+                                                <div class="text-danger small">Lewat tenggat</div>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($row->status === \App\Enums\BorrowingStatus::Borrowed)
+                                                <span class="badge bg-light-warning text-warning fw-semibold">
+                                                    <i class="bi bi-hourglass-split me-1"></i>Dipinjam
+                                                </span>
+                                            @elseif($row->status === \App\Enums\BorrowingStatus::Returned)
+                                                <span class="badge bg-light-success text-success fw-semibold">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Dikembalikan
+                                                </span>
+                                            @elseif($row->status === \App\Enums\BorrowingStatus::Overdue)
+                                                <span class="badge bg-light-danger text-danger fw-semibold">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Terlambat
+                                                </span>
+                                            @elseif($row->status === \App\Enums\BorrowingStatus::Lost)
+                                                <span class="badge bg-light-dark text-dark fw-semibold">
+                                                    <i class="bi bi-x-octagon-fill me-1"></i>Hilang
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($row->status->isActive())
+                                                <form action="{{ route('borrowings.return', $row) }}" method="POST" class="form-return no-spinner">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-primary fw-semibold">
+                                                        <i class="bi bi-box-arrow-in-down-left me-1"></i>Kembalikan
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="text-success small fw-semibold">
+                                                    <i class="bi bi-check2-all me-1"></i>Selesai
+                                                </span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        {{ $borrowings->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).on('submit', '.form-return', function (e) {
+        e.preventDefault();
+        const form = this;
+        Swal.fire({
+            title: 'Proses Pengembalian Buku?',
+            text: 'Sistem akan menghitung denda otomatis jika melewati batas tanggal kembali.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#435ebe',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Kembalikan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+</script>
+@endpush

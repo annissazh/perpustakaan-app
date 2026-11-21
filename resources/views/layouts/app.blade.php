@@ -3,76 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'PerpusApp - Sistem Informasi Perpustakaan')</title>
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap & Icons (kompatibel DataTables & komponen halaman) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
 
-    <!-- Bootstrap & Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-
-    <!-- Custom Mazer Style (Standar Mazer Terbaru) -->
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/compiled/css/app-dark.css') }}">
-    
-    <!-- <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}"> -->
-
-    <style>
-        .table-action-buttons form {
-            display: inline-block;
-            margin: 0;
-        }
-        .table-action-buttons .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
 </head>
 <body>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
     <div id="app">
-        <!-- Memanggil file sidebar -->
         @include('layouts.sidebar')
 
         <div id="main">
-            <!-- Tombol Hamburger untuk versi Mobile -->
-            <header class="mb-3">
-                <a href="#" class="burger-btn d-block d-xl-none text-primary">
-                    <i class="bi bi-justify fs-3"></i>
-                </a>
-            </header>
-
-            <div class="page-heading">
-                <div class="page-title mb-4">
-                    <div class="row align-items-center">
-                        <div class="col-12 col-md-6 order-md-1 order-last">
-                            <h3 class="mb-0">@yield('page-title')</h3>
-                        </div>
+            <div class="perpus-topbar">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="#" class="burger-btn" id="burgerBtn" aria-label="Buka menu">
+                        <i class="bi bi-list fs-4"></i>
+                    </a>
+                    <div>
+                        <h1 class="perpus-page-title">@yield('page-title')</h1>
+                        <p class="perpus-page-title-sub mb-0 d-none d-md-block">Sistem Informasi Perpustakaan</p>
                     </div>
                 </div>
-                
+            </div>
+
+            <div class="flex-grow-1">
                 <section class="section">
                     @yield('content')
                 </section>
             </div>
 
-            <footer>
-                <div class="footer clearfix mb-0 text-muted mt-5">
-                    <div class="float-start">
-                        <p>2026 &copy; PerpusApp</p>
-                    </div>
-                    <div class="float-end">
-                        <p>Dikembangkan untuk Sistem Informasi <span class="text-danger"><i class="bi bi-heart-fill icon-mid"></i></span></p>
-                    </div>
-                </div>
+            <footer class="perpus-footer d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                <p class="mb-0">&copy; 2026 <strong>PerpusApp</strong> &mdash; Perpustakaan Digital</p>
+                <p class="mb-0">Dibangun dengan <span class="text-danger"><i class="bi bi-heart-fill"></i></span> untuk edukasi</p>
             </footer>
         </div>
+    </div>
+
+    <!-- Wadah Modal Global (mencegah konflik z-index / backdrop) -->
+    @stack('modals')
+
+    <!-- Penampung Flash Message (agar bebas warning linter JS di VS Code) -->
+    <div id="flash-messages"
+         data-success="{{ session('success') }}"
+         data-error="{{ session('error') }}"
+         data-warning="{{ session('warning') }}"
+         data-validation="{{ $errors->any() ? $errors->first() : '' }}"
+         class="d-none">
     </div>
 
     <!-- Core Scripts -->
@@ -83,29 +67,122 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
-    <!-- Script Global -->
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Script Global UI/UX -->
     <script>
         $(document).ready(function () {
-            // Mengubah bahasa tabel menjadi Bahasa Indonesia secara otomatis
-            if ($('#table1').length) {
-                $('#table1').DataTable({
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/id.json"
-                    },
-                    "ordering": true,
-                    "info": true,
-                    "autoWidth": false
-                });
+            // 1. Inisialisasi Aman DataTables (anti-error double init & anti-warning colspan)
+            if ($('#table1').length && !$.fn.DataTable.isDataTable('#table1')) {
+                if ($('#table1 tbody tr td[colspan]').length === 0) {
+                    $('#table1').DataTable({
+                        language: {
+                            url: "https://cdn.datatables.net/plug-ins/1.13.4/i18n/id.json"
+                        },
+                        ordering: true,
+                        info: true,
+                        autoWidth: false,
+                        pageLength: 10
+                    });
+                }
             }
 
-            // Fungsi untuk membuka tutup sidebar di mode mobile
-            $('.burger-btn').on('click', function(e) {
+            // 2. Toggle Sidebar Mobile & Tutup Otomatis Saat Klik di Luar
+            const sidebar = $('#sidebar');
+            const backdrop = $('#sidebarBackdrop');
+
+            function openSidebar() {
+                sidebar.addClass('active');
+                backdrop.addClass('show');
+            }
+
+            function closeSidebar() {
+                sidebar.removeClass('active');
+                backdrop.removeClass('show');
+            }
+
+            $('.burger-btn').on('click', function (e) {
                 e.preventDefault();
-                $('#sidebar').toggleClass('active');
+                e.stopPropagation();
+                sidebar.hasClass('active') ? closeSidebar() : openSidebar();
             });
-            $('.sidebar-hide').on('click', function(e) {
+
+            $('.sidebar-close-btn, .sidebar-hide').on('click', function (e) {
                 e.preventDefault();
-                $('#sidebar').removeClass('active');
+                closeSidebar();
+            });
+
+            backdrop.on('click', function () {
+                closeSidebar();
+            });
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+
+            // 3. Aktifkan Semua Tooltip Bootstrap
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) {
+                return new bootstrap.Tooltip(el);
+            });
+
+            // 4. Notifikasi Toast Otomatis (Success, Error, Warning, Validasi)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3200,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+
+            const flashEl = document.getElementById('flash-messages');
+            if (flashEl) {
+                const { success, error, warning, validation } = flashEl.dataset;
+
+                if (success) Toast.fire({ icon: 'success', title: success });
+                if (error) Toast.fire({ icon: 'error', title: error });
+                if (warning) Toast.fire({ icon: 'warning', title: warning });
+                if (validation) Toast.fire({ icon: 'error', title: validation });
+            }
+
+            // 5. Konfirmasi Hapus Data Elegan (tambahkan class="form-delete" pada form hapus)
+            $(document).on('submit', '.form-delete', function (e) {
+                e.preventDefault();
+                const form = this;
+                Swal.fire({
+                    title: 'Yakin ingin menghapus?',
+                    text: 'Data yang dihapus tidak dapat dikembalikan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+
+            // 6. Auto Spinner pada Tombol Submit Form POST/PUT/DELETE (anti double-click)
+            $('form:not(.form-delete):not(.no-spinner)').on('submit', function () {
+                const method = ($(this).attr('method') || 'GET').toUpperCase();
+                if (method === 'GET') return;
+
+                const submitBtn = $(this).find('button[type="submit"]');
+                if (submitBtn.length && !submitBtn.prop('disabled')) {
+                    submitBtn.prop('disabled', true);
+                    submitBtn.html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Memproses...');
+                }
             });
         });
     </script>

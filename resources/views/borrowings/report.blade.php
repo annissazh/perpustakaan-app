@@ -21,6 +21,16 @@
     <div class="header">
         <h2>LAPORAN SIRKULASI PERPUSTAKAAN (PERPUSAPP)</h2>
         <p>Dicetak oleh: {{ Auth::user()->name ?? 'Admin' }} | Tanggal Cetak: {{ \Carbon\Carbon::now()->format('d M Y H:i') }}</p>
+        @if(!empty($filters['filter']) || !empty($filters['start_date']) || !empty($filters['end_date']))
+            <p style="font-size: 10px; margin-top: 3px;">
+                @if(!empty($filters['filter']))
+                    Periode: {{ ucfirst(str_replace('_', ' ', $filters['filter'])) }}
+                @endif
+                @if(!empty($filters['start_date']) && !empty($filters['end_date']))
+                    ({{ \Carbon\Carbon::parse($filters['start_date'])->format('d-m-Y') }} s/d {{ \Carbon\Carbon::parse($filters['end_date'])->format('d-m-Y') }})
+                @endif
+            </p>
+        @endif
     </div>
 
     <table>
@@ -48,9 +58,14 @@
                     <td class="text-center">{{ \Carbon\Carbon::parse($row->due_date)->format('d-m-Y') }}</td>
                     <td class="text-center">{{ $row->return_date ? \Carbon\Carbon::parse($row->return_date)->format('d-m-Y') : '-' }}</td>
                     <td class="text-center">
-                        @if($row->status == 'borrowed') Dipinjam
-                        @elseif($row->status == 'returned') Dikembalikan
-                        @elseif($row->status == 'overdue') <span class="badge-danger">Terlambat</span>
+                        @if($row->status === \App\Enums\BorrowingStatus::Borrowed)
+                            Dipinjam
+                        @elseif($row->status === \App\Enums\BorrowingStatus::Returned)
+                            Dikembalikan
+                        @elseif($row->status === \App\Enums\BorrowingStatus::Overdue)
+                            <span class="badge-danger">Terlambat</span>
+                        @elseif($row->status === \App\Enums\BorrowingStatus::Lost)
+                            <span class="badge-danger">Hilang</span>
                         @endif
                     </td>
                     <td class="text-right">Rp{{ number_format($row->fine_amount, 0, ',', '.') }}</td>

@@ -2,26 +2,37 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Role;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    /**
+     * Batasi akses route berdasarkan role pengguna.
+     *
+     * Superadmin selalu diizinkan karena memiliki akses penuh atas sistem.
+     */
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        // Pastikan user sudah login
-        if (!Auth::check()) {
-            return redirect('/login');
+        $user = $request->user();
+
+        // Pastikan user sudah login.
+        if (! $user) {
+            return redirect()->route('login');
         }
 
-        // Cek apakah role user ada di dalam daftar role yang diizinkan
-        if (in_array(Auth::user()->role, $roles)) {
+        if ($user->role === Role::Superadmin) {
             return $next($request);
         }
 
-        // Jika tidak punya akses (misal: mahasiswa mencoba masuk halaman admin), tendang ke katalog
-        return redirect('/katalog')->withErrors('Anda tidak memiliki izin untuk mengakses halaman tersebut.');
+        if (in_array($user->role->value, $roles, true)) {
+            return $next($request);
+        }
+
+        // Tidak punya akses (misal: anggota mencoba membuka halaman admin).
+        return redirect()->route('dashboard')
+            ->with('error', 'Anda tidak memiliki izin untuk mengakses halaman tersebut.');
     }
 }

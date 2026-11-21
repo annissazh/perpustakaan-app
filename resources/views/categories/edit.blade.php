@@ -11,7 +11,7 @@
                 <h4 class="card-title">Form Edit Kategori</h4>
             </div>
             <div class="card-body">
-                <form action="/categories/{{ $category->id }}" method="POST">
+                <form action="{{ route('categories.update', $category) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="form-group mb-3">
@@ -19,7 +19,7 @@
                         <input type="text" name="name" class="form-control" value="{{ $category->name }}" required>
                     </div>
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="/categories" class="btn btn-light-secondary">Batal</a>
+                        <a href="{{ route('categories.index') }}" class="btn btn-light-secondary">Batal</a>
                         <button type="submit" class="btn btn-warning"><i class="bi bi-save"></i> Perbarui</button>
                     </div>
                 </form>

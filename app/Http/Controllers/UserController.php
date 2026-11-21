@@ -2,84 +2,102 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Policies\UserPolicy;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    // Menampilkan daftar semua pengguna sistem
-    public function index()
+    /**
+     * Menampilkan daftar semua pengguna sistem.
+     */
+    public function index(): View
     {
-        $users = User::latest()->get(); // Menampilkan admin, petugas, dan anggota
+        $this->authorize('viewAny', User::class);
+
+        $users = User::query()
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
         return view('users.index', compact('users'));
     }
 
-    // Menampilkan form tambah anggota
-    public function create()
+    /**
+     * Menampilkan form tambah user.
+     */
+    public function create(): View
     {
-        return view('users.create');
+        $this->authorize('create', User::class);
+
+        $assignableRoles = app(UserPolicy::class)->assignableRoles(request()->user());
+
+        return view('users.create', compact('assignableRoles'));
     }
 
-    // Menyimpan data anggota baru
-    public function store(Request $request)
+    /**
+     * Menyimpan data user baru dengan validasi hierarki role.
+     */
+    public function store(StoreUserRequest $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,petugas,anggota' // Validasi role ditambahkan
-        ]);
-
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role, // Menyimpan role sesuai pilihan di form
+            'name' => $request->string('name')->toString(),
+            'email' => $request->string('email')->toString(),
+            'password' => $request->string('password')->toString(),
+            'role' => $request->string('role')->toString(),
         ]);
 
-        return redirect('/users')->with('success', 'Data user berhasil ditambahkan!');
+        return redirect()->route('users.index')
+            ->with('success', 'Data user berhasil ditambahkan!');
     }
 
-    // Menampilkan form edit anggota
-    public function edit($id)
+    /**
+     * Menampilkan form edit user.
+     */
+    public function edit(User $user): View
     {
-        $user = User::findOrFail($id);
-        return view('users.edit', compact('user'));
+        $this->authorize('update', $user);
+
+        $assignableRoles = app(UserPolicy::class)->assignableRoles(request()->user(), $user);
+
+        return view('users.edit', compact('user', 'assignableRoles'));
     }
 
-    // Memproses pembaruan data anggota
-    public function update(Request $request, $id)
+    /**
+     * Memproses pembaruan data user.
+     */
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
-        $user = User::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:8', 
-            'role' => 'required|in:admin,petugas,anggota' // Validasi role ditambahkan
-        ]);
-
         $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role, // Update role sesuai inputan
+            'name' => $request->string('name')->toString(),
+            'email' => $request->string('email')->toString(),
+            'role' => $request->string('role')->toString(),
         ];
 
-        // Jika password diisi, update passwordnya
+        // Password hanya diubah bila field dikirimkan.
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+            $data['password'] = $request->string('password')->toString();
         }
 
         $user->update($data);
 
-        return redirect('/users')->with('success', 'Data user berhasil diperbarui!');
+        return redirect()->route('users.index')
+            ->with('success', 'Data user berhasil diperbarui!');
     }
 
-    // Menghapus anggota
-    public function destroy($id)
+    /**
+     * Menghapus user dengan proteksi hierarki.
+     */
+    public function destroy(User $user): RedirectResponse
     {
-        User::destroy($id);
-        return redirect('/users')->with('success', 'Data user berhasil dihapus!');
+        $this->authorize('delete', $user);
+
+        $user->delete();
+
+        return redirect()->route('users.index')
+            ->with('success', 'Data user berhasil dihapus!');
     }
 }

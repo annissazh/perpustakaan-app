@@ -2,229 +2,228 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\BorrowBook;
+use App\Actions\ReturnBook;
+use App\Enums\BorrowingStatus;
+use App\Enums\Role;
+use App\Http\Requests\ReturnBorrowingRequest;
+use App\Http\Requests\SelfBorrowBookRequest;
+use App\Http\Requests\StoreBorrowingRequest;
 use App\Models\Book;
-use App\Models\User;
 use App\Models\Borrowing;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Models\SystemSetting;
+use App\Models\User;
+use App\Queries\BorrowingFilter;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class BorrowingController extends Controller
 {
-    // Menampilkan riwayat transaksi DENGAN FILTER (Untuk Admin/Petugas)
-    public function index(Request $request)
+    /**
+     * Menampilkan riwayat transaksi dengan filter (untuk admin/petugas).
+     */
+    public function index(Request $request): View
     {
-        $query = Borrowing::with(['user', 'admin', 'book'])->latest();
+        $filters = $this->validateFilters($request);
 
-        // 1. Filter Berdasarkan Pilihan Cepat (Harian/Bulanan/Tahunan)
-        if ($request->has('filter') && $request->filter != '') {
-            $now = Carbon::now();
-            if ($request->filter == 'hari_ini') {
-                $query->whereDate('borrow_date', $now->toDateString());
-            } elseif ($request->filter == 'bulan_ini') {
-                $query->whereMonth('borrow_date', $now->month)
-                      ->whereYear('borrow_date', $now->year);
-            } elseif ($request->filter == 'tahun_ini') {
-                $query->whereYear('borrow_date', $now->year);
-            }
-        }
+        $borrowings = BorrowingFilter::make($filters)
+            ->apply(Borrowing::with(['user', 'admin', 'book'])->latest())
+            ->paginate(15)
+            ->withQueryString();
 
-        // 2. Filter Berdasarkan Rentang Tanggal Kustom (Start Date - End Date)
-        if ($request->has('start_date') && $request->start_date != '' && $request->has('end_date') && $request->end_date != '') {
-            $query->whereBetween('borrow_date', [$request->start_date, $request->end_date]);
-        }
+        // Statistik dihitung dari query yang sama dengan filter aktif agar
+        // angka pada kartu ringkasan selalu konsisten dengan tabel.
+        $stats = [
+            'total' => $borrowings->total(),
+            'dipinjam' => BorrowingFilter::make($filters)
+                ->apply(Borrowing::query()->where('status', BorrowingStatus::Borrowed))
+                ->count(),
+            'terlambat' => BorrowingFilter::make($filters)
+                ->apply(Borrowing::query()
+                    ->active()
+                    ->whereDate('due_date', '<', now()->toDateString()))
+                ->count(),
+            'selesai' => BorrowingFilter::make($filters)
+                ->apply(Borrowing::query()->where('status', BorrowingStatus::Returned))
+                ->count(),
+            // Transaksi yang sudah lewat tenggat dihitung dari tanggal
+            // kembali, bukan dari kolom status, karena status "overdue"
+            // hanya dipakai oleh data lama.
+            'telat_dikembalikan' => BorrowingFilter::make($filters)
+                ->apply(Borrowing::query()->where('late_days', '>', 0))
+                ->count(),
+        ];
 
-        $borrowings = $query->get();
-        return view('borrowings.index', compact('borrowings'));
+        return view('borrowings.index', compact('borrowings', 'filters', 'stats'));
     }
 
-    public function create()
+    /**
+     * Menampilkan form peminjaman baru.
+     */
+    public function create(): View
     {
-        $members = User::where('role', 'anggota')->get();
-        $books = Book::where('available_stock', '>', 0)->get();
-        return view('borrowings.create', compact('members', 'books'));
+        $members = User::query()
+            ->where('role', Role::Anggota->value)
+            ->orderBy('name')
+            ->get();
+
+        $books = Book::query()
+            ->where('available_stock', '>', 0)
+            ->orderBy('title')
+            ->get();
+
+        $maxLoanDays = SystemSetting::getInt('maksimal_hari_pinjam', 7);
+
+        return view('borrowings.create', compact('members', 'books', 'maxLoanDays'));
     }
 
-    public function store(Request $request)
+    /**
+     * Menyimpan transaksi peminjaman baru.
+     */
+    public function store(StoreBorrowingRequest $request, BorrowBook $borrowBook): RedirectResponse
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'book_id' => 'required|exists:books,id',
-            'duration_days' => 'required|integer|min:1|max:30',
-        ]);
+        $borrowBook->handle([
+            'user_id' => $request->integer('user_id'),
+            'book_id' => $request->integer('book_id'),
+            'duration_days' => $request->integer('duration_days'),
+        ], $request->user()->id);
 
-        $book = Book::findOrFail($request->book_id);
-
-        if ($book->available_stock < 1) {
-            return back()->withErrors(['book_id' => 'Stok buku ini sedang kosong.']);
-        }
-
-        $borrowDate = Carbon::now();
-        $dueDate = Carbon::now()->addDays($request->duration_days);
-
-        Borrowing::create([
-            'user_id' => $request->user_id,
-            'admin_id' => Auth::id(),
-            'book_id' => $request->book_id,
-            'borrow_date' => $borrowDate,
-            'due_date' => $dueDate,
-            'duration_days' => $request->duration_days,
-            'status' => 'borrowed',
-        ]);
-
-        $book->decrement('available_stock');
-        return redirect('/borrowings')->with('success', 'Buku berhasil dipinjamkan!');
+        return redirect()->route('borrowings.index')
+            ->with('success', 'Buku berhasil dipinjamkan!');
     }
 
-    // Memproses Pengembalian atau Status Buku Hilang (Oleh Admin/Petugas)
-    public function returnBook(Request $request, $id)
-    {
-        $borrowing = Borrowing::with('book')->findOrFail($id);
+    /**
+     * Memproses pengembalian buku atau pencatatan buku hilang.
+     */
+    public function returnBook(
+        ReturnBorrowingRequest $request,
+        Borrowing $borrowing,
+        ReturnBook $returnBook
+    ): RedirectResponse {
+        $status = BorrowingStatus::from($request->string('status')->toString());
 
-        if ($borrowing->status != 'borrowed') {
-            return back()->withErrors(['error' => 'Buku ini sudah dikembalikan atau statusnya tidak valid.']);
-        }
+        $updated = $returnBook->handle(
+            $borrowing,
+            $status,
+            $request->filled('lost_fine_amount') ? $request->integer('lost_fine_amount') : null
+        );
 
-        $now = Carbon::now();
-        $dueDate = Carbon::parse($borrowing->due_date);
-        
-        $status = $request->input('status', 'returned');
-        $fineAmount = 0;
+        $message = $updated->fine_amount > 0
+            ? 'Status transaksi diperbarui. Terdapat tagihan/denda sebesar Rp'.number_format($updated->fine_amount, 0, ',', '.')
+            : 'Buku berhasil dikembalikan tepat waktu.';
 
-        if ($status == 'returned') {
-            if ($now->greaterThan($dueDate)) {
-                $daysLate = $dueDate->diffInDays($now);
-                $finePerDay = $borrowing->book->fine_per_day ?? 1000;
-                $fineAmount = $daysLate * $finePerDay;
-                $status = 'overdue'; 
-            }
-
-            $borrowing->book->increment('available_stock');
-        } else {
-            $fineAmount = $request->input('lost_fine_amount', 50000);
-            $status = 'lost';
-        }
-
-        $borrowing->update([
-            'return_date' => $now,
-            'status' => $status,
-            'fine_amount' => $fineAmount,
-        ]);
-
-        $message = $fineAmount > 0 
-            ? "Status transaksi diperbarui. Terdapat tagihan/denda sebesar Rp" . number_format($fineAmount, 0, ',', '.') 
-            : "Buku berhasil dikembalikan tepat waktu.";
-
-        return redirect('/borrowings')->with('success', $message);
+        return redirect()->route('borrowings.index')
+            ->with('success', $message);
     }
 
-    // Menghasilkan PDF yang MENGIKUTI FILTER yang sedang aktif
-    public function reportPdf(Request $request)
+    /**
+     * Menghasilkan PDF yang mengikuti filter yang sedang aktif.
+     */
+    public function reportPdf(Request $request): Response
     {
-        $query = Borrowing::with(['user', 'admin', 'book'])->orderBy('borrow_date', 'desc');
+        $filters = $this->validateFilters($request);
 
-        if ($request->has('filter') && $request->filter != '') {
-            $now = Carbon::now();
-            if ($request->filter == 'hari_ini') {
-                $query->whereDate('borrow_date', $now->toDateString());
-            } elseif ($request->filter == 'bulan_ini') {
-                $query->whereMonth('borrow_date', $now->month)
-                      ->whereYear('borrow_date', $now->year);
-            } elseif ($request->filter == 'tahun_ini') {
-                $query->whereYear('borrow_date', $now->year);
-            }
-        }
+        $borrowings = BorrowingFilter::make($filters)
+            ->apply(Borrowing::with(['user', 'admin', 'book'])->orderByDesc('borrow_date'))
+            ->get();
 
-        if ($request->has('start_date') && $request->start_date != '' && $request->has('end_date') && $request->end_date != '') {
-            $query->whereBetween('borrow_date', [$request->start_date, $request->end_date]);
-        }
-
-        $borrowings = $query->get();
-
-        $pdf = Pdf::loadView('borrowings.report', compact('borrowings'));
+        $pdf = Pdf::loadView('borrowings.report', compact('borrowings', 'filters'));
         $pdf->setPaper('A4', 'landscape');
+
         return $pdf->stream('laporan-sirkulasi-perpusapp.pdf');
     }
 
-    // Method khusus untuk Halaman Riwayat Saya
-    public function history()
+    /**
+     * Halaman riwayat peminjaman milik pengguna yang sedang login.
+     */
+    public function history(Request $request): View
     {
-        $borrowings = Borrowing::where('user_id', Auth::id())
-                        ->with('book')
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-                        
-        return view('riwayat', compact('borrowings')); 
+        $borrowings = Borrowing::query()
+            ->where('user_id', $request->user()->id)
+            ->with('book')
+            ->latest()
+            ->paginate(15);
+
+        return view('riwayat', compact('borrowings'));
     }
 
-    // Method Peminjaman Mandiri untuk Role Anggota
-    public function pinjamMandiri(Request $request, $book_id)
-    {
-        $book = Book::findOrFail($book_id);
+    /**
+     * Peminjaman mandiri oleh anggota dari halaman katalog.
+     */
+    public function pinjamMandiri(
+        SelfBorrowBookRequest $request,
+        Book $book,
+        BorrowBook $borrowBook
+    ): RedirectResponse {
+        $maxLoanDays = SystemSetting::getInt('maksimal_hari_pinjam', 7);
+        $durationDays = $request->integer('duration_days', $maxLoanDays);
 
-        if ($book->available_stock < 1) {
-            return back()->with('error', 'Maaf, stok buku ini sedang kosong.');
+        try {
+            $borrowBook->handle([
+                'user_id' => $request->user()->id,
+                'book_id' => $book->id,
+                'duration_days' => $durationDays,
+            ]);
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors())
+                ->withInput();
         }
 
-        $durationDays = $request->input('duration_days', 7);
-        $borrowDate = Carbon::now();
-        $dueDate = Carbon::now()->addDays($durationDays);
-
-        Borrowing::create([
-            'user_id'       => Auth::id(),
-            'admin_id'      => null,
-            'book_id'       => $book->id,
-            'borrow_date'   => $borrowDate,
-            'due_date'      => $dueDate,
-            'duration_days' => $durationDays,
-            'status'        => 'borrowed',
-        ]);
-
-        $book->decrement('available_stock');
-
-        return redirect('/riwayat')->with('success', 'Buku berhasil dipinjam! Silakan cek di riwayat peminjaman.');
+        return redirect()
+            ->route('riwayat.index')
+            ->with('success', 'Buku "'.$book->title.'" berhasil dipinjam! Silakan cek riwayat peminjaman Anda.');
     }
 
-    // 👇 TAMBAHAN BARU: Method Pengembalian Mandiri untuk Role Anggota
-    public function kembalikanMandiri($id)
+    /**
+     * Pengembalian mandiri oleh anggota dari halaman riwayat.
+     */
+    public function kembalikanMandiri(
+        Request $request,
+        Borrowing $borrowing,
+        ReturnBook $returnBook
+    ): RedirectResponse {
+        if ($request->user()->role !== Role::Anggota) {
+            abort(403);
+        }
+
+        if ($borrowing->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        try {
+            $updated = $returnBook->handle($borrowing, BorrowingStatus::Returned);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        $message = $updated->fine_amount > 0
+            ? 'Buku berhasil dikembalikan. Denda: Rp'.number_format($updated->fine_amount, 0, ',', '.')
+            : 'Buku berhasil dikembalikan tepat waktu!';
+
+        return redirect()
+            ->route('riwayat.index')
+            ->with('success', $message);
+    }
+
+    /**
+     * Validasi filter laporan dan daftar sirkulasi.
+     *
+     * @return array<string, mixed>
+     */
+    private function validateFilters(Request $request): array
     {
-        $borrowing = Borrowing::with('book')
-                        ->where('id', $id)
-                        ->where('user_id', Auth::id())
-                        ->firstOrFail();
-
-        if ($borrowing->status != 'borrowed') {
-            return back()->with('error', 'Buku ini sudah dikembalikan sebelumnya.');
-        }
-
-        $now = Carbon::now();
-        $dueDate = Carbon::parse($borrowing->due_date);
-        $status = 'returned';
-        $fineAmount = 0;
-
-        // Hitung denda keterlambatan jika melewati tenggat waktu
-        if ($now->greaterThan($dueDate)) {
-            $daysLate = $dueDate->diffInDays($now);
-            $finePerDay = $borrowing->book->fine_per_day ?? 1000;
-            $fineAmount = $daysLate * $finePerDay;
-            $status = 'overdue';
-        }
-
-        // Kembalikan stok buku
-        $borrowing->book->increment('available_stock');
-
-        // Update status peminjaman
-        $borrowing->update([
-            'return_date' => $now,
-            'status'      => $status,
-            'fine_amount' => $fineAmount,
+        return $request->validate([
+            'filter' => ['nullable', Rule::in(['hari_ini', 'bulan_ini', 'tahun_ini'])],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'status' => ['nullable', Rule::enum(BorrowingStatus::class)],
+            'search' => ['nullable', 'string', 'max:255'],
         ]);
-
-        $message = $fineAmount > 0
-            ? "Buku berhasil dikembalikan dengan keterlambatan. Denda: Rp" . number_format($fineAmount, 0, ',', '.')
-            : "Buku berhasil dikembalikan tepat waktu!";
-
-        return redirect('/riwayat')->with('success', $message);
     }
 }

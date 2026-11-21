@@ -1,83 +1,83 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
-// Route untuk yang belum login (Guest)
+/*
+|--------------------------------------------------------------------------
+| Route untuk yang belum login (Guest)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'login'])->name('login');
-    Route::post('/login', [AuthController::class, 'authenticate']);
-    
-    // Route untuk Katalog (Bisa diakses tanpa login jika diinginkan)
-    Route::get('/katalog', [BookController::class, 'katalog']);
-    Route::get('/katalog/search-ajax', [BookController::class, 'searchAjax']);
+    Route::post('/login', [AuthController::class, 'authenticate'])->name('login.store');
 });
 
-// Route untuk yang sudah login (Auth)
+/*
+|--------------------------------------------------------------------------
+| Route untuk yang sudah login (Auth)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
-    
-    // Bisa diakses SEMUA ROLE (Admin, Petugas, Anggota)
-    Route::get('/', [DashboardController::class, 'index']);
+    // Dashboard, katalog, dan riwayat dapat diakses semua role.
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/katalog', [BookController::class, 'katalog']);
-    Route::get('/riwayat', [BorrowingController::class, 'history']);
+    Route::get('/katalog', [BookController::class, 'katalog'])->name('katalog.index');
+    Route::get('/katalog/search-ajax', [BookController::class, 'searchAjax'])->name('katalog.search');
+    Route::get('/riwayat', [BorrowingController::class, 'history'])->name('riwayat.index');
 
-    // HANYA bisa diakses oleh ADMIN
+    // Manajemen pengguna: admin (superadmin mendapat akses penuh lewat middleware role).
     Route::middleware('role:admin')->group(function () {
-        // Route Manajemen User
-        Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/create', [UserController::class, 'create']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::get('/users/{id}/edit', [UserController::class, 'edit']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
-
-        // Route Kelola Kategori (Hanya Admin; Petugas hanya bisa melihat)
-        Route::post('/categories', [CategoryController::class, 'store']);
-        Route::get('/categories/{id}/edit', [CategoryController::class, 'edit']); 
-        Route::put('/categories/{id}', [CategoryController::class, 'update']);    
-        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
-    // Bisa diakses oleh ADMIN & PETUGAS (Operasional Perpustakaan)
+    // Operasional perpustakaan: admin & petugas.
     Route::middleware('role:admin,petugas')->group(function () {
-        // Petugas hanya bisa melihat daftar Kategori
-        Route::get('/categories', [CategoryController::class, 'index']);
+        // Kategori buku.
+        Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
-        // Route Kelola Buku (Admin & Petugas mengelola buku + Detail Buku)
-        Route::get('/books', [BookController::class, 'index']);
-        Route::get('/books/create', [BookController::class, 'create']);
-        Route::post('/books', [BookController::class, 'store']);
-        Route::get('/books/{id}', [BookController::class, 'show']); // <-- Ditambahkan untuk Detail Buku
-        Route::get('/books/{id}/edit', [BookController::class, 'edit']);
-        Route::put('/books/{id}', [BookController::class, 'update']);
-        Route::delete('/books/{id}', [BookController::class, 'destroy']);
+        // Buku.
+        Route::get('/books', [BookController::class, 'index'])->name('books.index');
+        Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+        Route::post('/books', [BookController::class, 'store'])->name('books.store');
+        Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
+        Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
+        Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
+        Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
 
-        Route::get('/members', [MemberController::class, 'index']);
-        Route::get('/members/create', [MemberController::class, 'create']);
-        Route::post('/members', [MemberController::class, 'store']);
-        Route::get('/members/{id}', [MemberController::class, 'show']);
-        Route::get('/members/{id}/edit', [MemberController::class, 'edit']);
-        Route::put('/members/{id}', [MemberController::class, 'update']);
-        Route::delete('/members/{id}', [MemberController::class, 'destroy']);
+        Route::get('/members', [MemberController::class, 'index'])->name('members.index');
+        Route::get('/members/create', [MemberController::class, 'create'])->name('members.create');
+        Route::post('/members', [MemberController::class, 'store'])->name('members.store');
+        Route::get('/members/{id}', [MemberController::class, 'show'])->name('members.show');
+        Route::get('/members/{id}/edit', [MemberController::class, 'edit'])->name('members.edit');
+        Route::put('/members/{id}', [MemberController::class, 'update'])->name('members.update');
+        Route::delete('/members/{id}', [MemberController::class, 'destroy'])->name('members.destroy');
 
-        // Route Sirkulasi & Laporan
-        Route::get('/borrowings', [BorrowingController::class, 'index']);
-        Route::get('/borrowings/report-pdf', [BorrowingController::class, 'reportPdf']);
-        Route::get('/borrowings/create', [BorrowingController::class, 'create']);
-        Route::post('/borrowings', [BorrowingController::class, 'store']);
-        Route::post('/borrowings/{id}/return', [BorrowingController::class, 'returnBook']);
+        // Sirkulasi & laporan.
+        Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
+        Route::get('/borrowings/report-pdf', [BorrowingController::class, 'reportPdf'])->name('borrowings.report');
+        Route::get('/borrowings/create', [BorrowingController::class, 'create'])->name('borrowings.create');
+        Route::post('/borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
+        Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'returnBook'])->name('borrowings.return');
     });
 
-    // role anggota
     Route::middleware('role:anggota')->group(function () {
-        Route::post('/katalog/pinjam/{book_id}', [BorrowingController::class, 'pinjamMandiri'])->name('katalog.pinjam');
-        Route::post('/riwayat/kembalikan/{id}', [BorrowingController::class, 'kembalikanMandiri'])->name('riwayat.kembalikan');
+        Route::post('/katalog/pinjam/{book}', [BorrowingController::class, 'pinjamMandiri'])->name('katalog.pinjam');
+        Route::post('/riwayat/kembalikan/{borrowing}', [BorrowingController::class, 'kembalikanMandiri'])->name('riwayat.kembalikan');
     });
 });

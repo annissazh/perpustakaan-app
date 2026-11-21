@@ -2,37 +2,63 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        $categories = Category::orderBy('name', 'asc')->get();
+        $categories = Category::orderBy('name')->paginate(15);
+
         return view('categories.index', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request): RedirectResponse
     {
-        $request->validate(['name' => 'required|string|max:255']);
-        Category::create(['name' => $request->name]);
-        return redirect('/categories')->with('success', 'Kategori baru berhasil ditambahkan!');
+        Category::create(['name' => $request->string('name')->toString()]);
+
+        return redirect()->route('categories.index')
+            ->with('success', 'Kategori baru berhasil ditambahkan!');
     }
 
-    // Fungsi menyimpan perubahan edit dari Modal
-    public function update(Request $request, $id)
+    /**
+     * Menampilkan form edit kategori.
+     */
+    public function edit(Category $category): View
     {
-        $request->validate(['name' => 'required|string|max:255']);
-        $category = Category::findOrFail($id);
-        $category->update(['name' => $request->name]);
-        
-        return redirect('/categories')->with('success', 'Kategori berhasil diperbarui!');
+        return view('categories.edit', compact('category'));
     }
 
-    public function destroy($id)
+    /**
+     * Menyimpan perubahan kategori dari modal.
+     */
+    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
-        Category::findOrFail($id)->delete();
-        return redirect('/categories')->with('success', 'Kategori berhasil dihapus!');
+        $category->update(['name' => $request->string('name')->toString()]);
+
+        return redirect()->route('categories.index')
+            ->with('success', 'Kategori berhasil diperbarui!');
+    }
+
+    /**
+     * Menghapus kategori.
+     */
+    public function destroy(Category $category): RedirectResponse
+    {
+        // Kategori yang masih memiliki buku tidak boleh dihapus karena akan
+        // ikut menghapus seluruh buku di dalamnya (cascade).
+        if ($category->books()->exists()) {
+            return redirect()->route('categories.index')
+                ->with('error', 'Kategori masih memiliki buku sehingga tidak dapat dihapus.');
+        }
+
+        $category->delete();
+
+        return redirect()->route('categories.index')
+            ->with('success', 'Kategori berhasil dihapus!');
     }
 }
