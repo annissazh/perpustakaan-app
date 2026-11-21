@@ -95,3 +95,48 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:linear-grad
 #searchResults .dropdown-item:hover{background:rgba(13,148,136,.08)}
 .perpus-footer{margin-top:auto;padding-top:1.5rem;border-top:1px solid rgba(13,148,136,.1);color:#94a3b8;font-size:.875rem}
 ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:rgba(13,148,136,.25);border-radius:10px}
+
+/* --- Ambient & motion --- */
+body::before,body::after{content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(80px);opacity:.45}
+body::before{width:420px;height:420px;top:-120px;right:-80px;background:radial-gradient(circle,rgba(13,148,136,.35),transparent 70%)}
+body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-gradient(circle,rgba(99,102,241,.28),transparent 70%)}
+#app{position:relative;z-index:1}
+.perpus-auth__hero::before,.perpus-auth__hero::after{content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.12);animation:perpusFloat 8s ease-in-out infinite}
+.perpus-auth__hero::before{width:280px;height:280px;top:10%;left:8%}
+.perpus-auth__hero::after{width:180px;height:180px;bottom:15%;right:12%;animation-delay:-3s}
+@keyframes perpusFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-18px) scale(1.05)}}
+.perpus-auth__hero-content{position:relative;z-index:1;max-width:380px;text-align:center}
+.perpus-welcome-card::after{content:'';position:absolute;width:200px;height:200px;top:-60px;right:-40px;background:radial-gradient(circle,rgba(13,148,136,.15),transparent 70%);pointer-events:none}
+.section .card.perpus-animate-in{animation:perpusFadeUp .45s cubic-bezier(.4,0,.2,1) both}
+.card-title{font-weight:700;color:#0f172a;letter-spacing:-.02em}
+.table thead th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:700;border-bottom-width:1px}
+.table.table-striped>tbody>tr:nth-of-type(odd){--bs-table-bg:rgba(13,148,136,.03)}
+.alert{border-radius:.85rem;border:none;box-shadow:var(--perpus-shadow)}
+
+/* --- Detail panels (ganti table-bordered kaku) --- */
+.perpus-info-list{margin:0;padding:0;list-style:none}
+.perpus-info-list li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1rem;padding:.9rem 0;border-bottom:1px solid rgba(13,148,136,.1)}
+.perpus-info-list li:last-child{border-bottom:none}
+.perpus-info-list .label{font-size:.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;flex:0 0 38%}
+.perpus-info-list .value{font-weight:600;color:#0f172a;flex:1;text-align:right}
+.perpus-profile-hero{text-align:center;padding:1.25rem 1rem 1.5rem;border-bottom:1px solid rgba(13,148,136,.08);background:linear-gradient(180deg,rgba(13,148,136,.06),transparent)}
+.perpus-preview-box{border-radius:var(--perpus-radius);border:1px dashed rgba(13,148,136,.25);background:rgba(248,250,252,.85)!important}
+#bookPreviewCard.perpus-preview-box{border-style:solid;border-color:rgba(13,148,136,.12)}
+
+/* --- DataTables --- */
+.dataTables_wrapper .dataTables_filter input,.dataTables_wrapper .dataTables_length select{border-radius:.65rem;border:1px solid rgba(13,148,136,.18);padding:.4rem .75rem;transition:border-color .2s,box-shadow .2s}
+.dataTables_wrapper .dataTables_filter input:focus{outline:none;border-color:var(--perpus-primary);box-shadow:0 0 0 .2rem rgba(13,148,136,.15)}
+.dataTables_wrapper .dataTables_info,.dataTables_wrapper .dataTables_length label{font-size:.85rem;color:#64748b}
+.dataTables_wrapper .dataTables_paginate .paginate_button{border-radius:.5rem!important;margin:0 .15rem;border:1px solid transparent!important;padding:.35rem .75rem!important}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover{background:linear-gradient(135deg,var(--perpus-primary),#14b8a6)!important;color:#fff!important;border:none!important;box-shadow:0 4px 12px rgba(13,148,136,.25)}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover{background:rgba(13,148,136,.1)!important;color:var(--perpus-primary-dark)!important;border-color:rgba(13,148,136,.15)!important}
+
+/* --- Modals --- */
+.modal-content{border-radius:1.1rem;border:1px solid rgba(13,148,136,.12);overflow:hidden;box-shadow:0 25px 50px -12px rgba(15,23,42,.2)}
+.modal-header.perpus-modal-header{background:linear-gradient(135deg,var(--perpus-primary),#14b8a6);color:#fff;border:none}
+.modal-header.perpus-modal-header .btn-close{filter:invert(1)}
+.modal-header.perpus-modal-header-warning{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#422006;border:none}
+
+/* --- Pagination Laravel --- */
+.pagination .page-link{border-radius:.5rem!important;margin:0 .15rem;border-color:rgba(13,148,136,.15);color:var(--perpus-primary)}
+.pagination .page-item.active .page-link{background:var(--perpus-primary);border-color:var(--perpus-primary)}

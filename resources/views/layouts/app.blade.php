@@ -73,6 +73,10 @@
     <!-- Script Global UI/UX -->
     <script>
         $(document).ready(function () {
+            $('.section .card').each(function (index) {
+                $(this).addClass('perpus-animate-in').css('animation-delay', (index * 0.06) + 's');
+            });
+
             // 1. Inisialisasi Aman DataTables (anti-error double init & anti-warning colspan)
             if ($('#table1').length && !$.fn.DataTable.isDataTable('#table1')) {
                 if ($('#table1 tbody tr td[colspan]').length === 0) {

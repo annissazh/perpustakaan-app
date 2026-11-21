@@ -4,74 +4,80 @@
 @section('page-title', 'Detail Informasi Anggota')
 
 @section('content')
-<div class="row">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">Profil Anggota</h4>
-                <a href="/members" class="btn btn-sm btn-secondary">Kembali</a>
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="perpus-profile-hero">
+                <div class="avatar avatar-xl mx-auto mb-3">
+                    <span class="avatar-content text-uppercase">{{ substr($member->name, 0, 1) }}</span>
+                </div>
+                <h5 class="fw-bold mb-1">{{ $member->name }}</h5>
+                <span class="badge bg-light-primary text-primary fw-semibold">Anggota</span>
             </div>
             <div class="card-body">
-                <table class="table table-bordered">
-                    <tr>
-                        <th width="35%">Nama</th>
-                        <td>{{ $member->name }}</td>
-                    </tr>
-                    <tr>
-                        <th>Email</th>
-                        <td>{{ $member->email }}</td>
-                    </tr>
-                    <tr>
-                        <th>Role</th>
-                        <td><span class="badge bg-info">Anggota</span></td>
-                    </tr>
-                    <tr>
-                        <th>Bergabung Sejak</th>
-                        <td>{{ $member->created_at ? $member->created_at->format('d M Y') : '-' }}</td>
-                    </tr>
-                </table>
-                <a href="/members/{{ $member->id }}/edit" class="btn btn-warning w-100 mt-2">
-                    <i class="bi bi-pencil-square"></i> Edit Profil Anggota
-                </a>
+                <ul class="perpus-info-list">
+                    <li>
+                        <span class="label">Email</span>
+                        <span class="value">{{ $member->email }}</span>
+                    </li>
+                    <li>
+                        <span class="label">Bergabung</span>
+                        <span class="value">{{ $member->created_at?->format('d M Y') ?? '-' }}</span>
+                    </li>
+                    <li>
+                        <span class="label">Total Pinjam</span>
+                        <span class="value">{{ $borrowings->count() }} transaksi</span>
+                    </li>
+                </ul>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ route('members.edit', $member->id) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Profil
+                    </a>
+                    <a href="{{ route('members.index') }}" class="btn btn-light-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Kembali
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-7">
-        <div class="card">
+    <div class="col-lg-8">
+        <div class="card h-100">
             <div class="card-header">
-                <h4 class="card-title mb-0">Riwayat Peminjaman Buku</h4>
+                <div>
+                    <h4 class="card-title mb-1">Riwayat Peminjaman</h4>
+                    <p class="text-muted small mb-0">Semua transaksi yang dilakukan anggota ini.</p>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
                                 <th>Judul Buku</th>
                                 <th>Tgl Pinjam</th>
                                 <th>Tenggat</th>
-                                <th>Status</th>
+                                <th class="text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($borrowings as $item)
                                 <tr>
-                                    <td>{{ $item->book->title ?? 'Buku Dihapus' }}</td>
+                                    <td class="fw-semibold">{{ $item->book->title ?? 'Buku Dihapus' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($item->borrow_date)->format('d M Y') }}</td>
                                     <td>{{ \Carbon\Carbon::parse($item->due_date)->format('d M Y') }}</td>
-                                    <td>
-                                        @if($item->status == 'borrowed')
-                                            <span class="badge bg-warning">Dipinjam</span>
-                                        @elseif($item->status == 'returned')
-                                            <span class="badge bg-success">Dikembalikan</span>
-                                        @else
-                                            <span class="badge bg-danger">{{ ucfirst($item->status) }}</span>
-                                        @endif
+                                    <td class="text-center">
+                                        <span class="badge {{ $item->status->badgeClass() }} fw-semibold">
+                                            {{ $item->status->label() }}
+                                        </span>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted">Anggota ini belum pernah meminjam buku.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="bi bi-journal-x d-block fs-3 mb-2 opacity-50"></i>
+                                        Anggota ini belum pernah meminjam buku.
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

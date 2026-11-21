@@ -39,7 +39,7 @@
 ## 🛠️ Teknologi yang Digunakan
 * **Backend:** PHP 8.4, Laravel Framework
 * **Database:** MySQL (Eloquent ORM & Migrations)
-* **Frontend:** Blade Templating, Bootstrap 5, Mazer Admin Template, DataTables, AJAX
+* **Frontend:** Blade, Tailwind CSS v4, Bootstrap 5, tema PerpusApp kustom, DataTables, AJAX
 * **Library Tambahan:** `barryvdh/laravel-dompdf` (Ekspor Laporan Sirkulasi PDF)
 
 ---

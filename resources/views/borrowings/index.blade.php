@@ -247,7 +247,7 @@
             text: 'Sistem akan menghitung denda otomatis jika melewati batas tanggal kembali.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#435ebe',
+            confirmButtonColor: '#0d9488',
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Ya, Kembalikan',
             cancelButtonText: 'Batal',

@@ -88,7 +88,7 @@
 
                         <!-- Ringkasan Buku & Estimasi Tenggat Otomatis -->
                         <div class="col-12">
-                            <div id="bookPreviewCard" class="p-3 rounded-3 bg-light border d-none">
+                            <div id="bookPreviewCard" class="p-3 perpus-preview-box d-none">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                     <span class="badge bg-light-primary text-primary fw-semibold">
                                         <i class="bi bi-journal-check me-1"></i>Ringkasan Buku Dipilih

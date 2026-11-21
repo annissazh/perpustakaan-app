@@ -6,61 +6,77 @@
 @section('content')
 <div class="row">
     <div class="col-12">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible show fade">
-                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">Daftar Anggota</h4>
-                <a href="/members/create" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Tambah Anggota
+            <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <div>
+                    <h4 class="card-title mb-1">Daftar Anggota</h4>
+                    <p class="text-muted small mb-0">Kelola profil dan akun anggota perpustakaan.</p>
+                </div>
+                <a href="{{ route('members.create') }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus-fill me-1"></i> Tambah Anggota
                 </a>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="table1">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Nama Anggota</th>
-                                <th>Email</th>
-                                <th>Tanggal Terdaftar</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($members as $index => $member)
+                @if($members->isEmpty())
+                    <div class="text-center py-5">
+                        <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                            <i class="bi bi-person-badge fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Belum Ada Anggota</h5>
+                        <p class="text-muted mb-3">Tambahkan anggota pertama untuk mulai layanan peminjaman.</p>
+                        <a href="{{ route('members.create') }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-person-plus me-1"></i> Tambah Anggota
+                        </a>
+                    </div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="table1">
+                            <thead class="table-light">
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td><strong>{{ $member->name }}</strong></td>
-                                    <td>{{ $member->email }}</td>
-                                    <td>{{ $member->created_at ? $member->created_at->format('d M Y') : '-' }}</td>
-                                    <td>
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <a href="/members/{{ $member->id }}" class="btn btn-sm btn-info text-white">
-                                                <i class="bi bi-eye"></i> Detail
-                                            </a>
-                                            <a href="/members/{{ $member->id }}/edit" class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i> Edit
-                                            </a>
-                                            <form action="/members/{{ $member->id }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus anggota ini?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i> Hapus
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                    <th style="width: 55px;">No</th>
+                                    <th>Nama Anggota</th>
+                                    <th>Email</th>
+                                    <th>Tgl Terdaftar</th>
+                                    <th class="text-center" style="width: 150px;">Aksi</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach($members as $index => $member)
+                                    <tr>
+                                        <td class="text-muted">{{ $index + 1 }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="avatar avatar-sm flex-shrink-0">
+                                                    <span class="avatar-content text-uppercase">{{ substr($member->name, 0, 1) }}</span>
+                                                </div>
+                                                <strong class="text-dark">{{ $member->name }}</strong>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $member->email }}</span></td>
+                                        <td>{{ $member->created_at?->format('d M Y') ?? '-' }}</td>
+                                        <td class="text-center">
+                                            <div class="table-action-buttons justify-content-center">
+                                                <a href="{{ route('members.show', $member->id) }}" class="btn btn-sm btn-light-primary text-primary" data-bs-toggle="tooltip" title="Detail">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
+                                                <a href="{{ route('members.edit', $member->id) }}" class="btn btn-sm btn-light-warning text-warning" data-bs-toggle="tooltip" title="Edit">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <form action="{{ route('members.destroy', $member->id) }}" method="POST" class="form-delete">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-light-danger text-danger" data-bs-toggle="tooltip" title="Hapus">
+                                                        <i class="bi bi-trash-fill"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

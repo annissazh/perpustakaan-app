@@ -4,70 +4,73 @@
 @section('page-title', 'Detail Informasi Buku')
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">{{ $book->title }}</h4>
-                <a href="/books" class="btn btn-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="card overflow-hidden">
+            <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <div>
+                    <h4 class="card-title mb-1">{{ $book->title }}</h4>
+                    <p class="text-muted small mb-0">Informasi lengkap koleksi buku.</p>
+                </div>
+                <a href="{{ route('books.index') }}" class="btn btn-light-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Kembali
                 </a>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 text-center mb-3">
+                <div class="row g-4 align-items-start">
+                    <div class="col-md-4 col-lg-3 text-center">
                         @if($book->cover_image)
-                            <img src="{{ asset('storage/' . $book->cover_image) }}" class="img-fluid rounded shadow-sm" alt="Sampul Buku" style="max-height: 350px; object-fit: cover;">
+                            <img src="{{ asset('storage/'.$book->cover_image) }}" class="img-fluid rounded-3 shadow-sm" alt="Sampul {{ $book->title }}" style="max-height: 360px; object-fit: cover;">
                         @else
-                            <div class="bg-light rounded d-flex justify-content-center align-items-center" style="height: 350px;">
-                                <i class="bi bi-book text-secondary" style="font-size: 5rem;"></i>
+                            <div class="book-cover-wrapper rounded-3 d-flex justify-content-center align-items-center mx-auto" style="max-width: 260px; height: 320px;">
+                                <i class="bi bi-journal-richtext text-secondary opacity-50" style="font-size: 4rem;"></i>
                             </div>
                         @endif
                     </div>
-                    <div class="col-md-8">
-                        <table class="table table-bordered">
-                            <tr>
-                                <th width="30%">Judul Buku</th>
-                                <td>{{ $book->title }}</td>
-                            </tr>
-                            <tr>
-                                <th>Kategori</th>
-                                <td><span class="badge bg-primary">{{ $book->category->name ?? 'Tanpa Kategori' }}</span></td>
-                            </tr>
-                            <tr>
-                                <th>Penulis</th>
-                                <td>{{ $book->author }}</td>
-                            </tr>
-                            <tr>
-                                <th>Penerbit</th>
-                                <td>{{ $book->publisher ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>ISBN</th>
-                                <td><code>{{ $book->isbn }}</code></td>
-                            </tr>
-                            <tr>
-                                <th>Tahun Terbit</th>
-                                <td>{{ $book->published_year }}</td>
-                            </tr>
-                            <tr>
-                                <th>Total Stok</th>
-                                <td>{{ $book->total_stock }} eksemplar</td>
-                            </tr>
-                            <tr>
-                                <th>Stok Tersedia</th>
-                                <td>
-                                    <span class="badge {{ $book->available_stock > 0 ? 'bg-success' : 'bg-danger' }}">
-                                        {{ $book->available_stock }} eksemplar
-                                    </span>
-                                </td>
-                            </tr>
-                        </table>
-
-                        <div class="mt-3">
-                            <a href="/books/{{ $book->id }}/edit" class="btn btn-warning">
-                                <i class="bi bi-pencil-square"></i> Edit Buku
+                    <div class="col-md-8 col-lg-9">
+                        <ul class="perpus-info-list">
+                            <li>
+                                <span class="label">Kategori</span>
+                                <span class="value">
+                                    <span class="badge bg-light-primary text-primary fw-semibold">{{ $book->category->name ?? 'Tanpa Kategori' }}</span>
+                                </span>
+                            </li>
+                            <li>
+                                <span class="label">Penulis</span>
+                                <span class="value">{{ $book->author }}</span>
+                            </li>
+                            <li>
+                                <span class="label">Penerbit</span>
+                                <span class="value">{{ $book->publisher ?? '-' }}</span>
+                            </li>
+                            <li>
+                                <span class="label">ISBN</span>
+                                <span class="value"><code class="text-dark">{{ $book->isbn }}</code></span>
+                            </li>
+                            <li>
+                                <span class="label">Tahun Terbit</span>
+                                <span class="value">{{ $book->published_year }}</span>
+                            </li>
+                            <li>
+                                <span class="label">Total Stok</span>
+                                <span class="value">{{ $book->total_stock }} eksemplar</span>
+                            </li>
+                            <li>
+                                <span class="label">Stok Tersedia</span>
+                                <span class="value">
+                                    @if($book->available_stock > 0)
+                                        <span class="badge bg-light-success text-success fw-semibold">{{ $book->available_stock }} tersedia</span>
+                                    @else
+                                        <span class="badge bg-light-danger text-danger fw-semibold">Habis</span>
+                                    @endif
+                                </span>
+                            </li>
+                        </ul>
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <a href="{{ route('books.edit', $book) }}" class="btn btn-primary">
+                                <i class="bi bi-pencil-square me-1"></i> Edit Buku
                             </a>
+                            <a href="{{ route('books.index') }}" class="btn btn-light-secondary">Daftar Buku</a>
                         </div>
                     </div>
                 </div>

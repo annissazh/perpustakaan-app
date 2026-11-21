@@ -85,7 +85,7 @@
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header perpus-modal-header">
                 <h5 class="modal-title text-white" id="addCategoryModalLabel">
                     <i class="bi bi-plus-circle me-2"></i>Tambah Kategori Baru
                 </h5>
@@ -113,8 +113,8 @@
 <div class="modal fade" id="editModal{{ $category->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $category->id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title text-dark fw-bold" id="editModalLabel{{ $category->id }}">
+            <div class="modal-header perpus-modal-header-warning">
+                <h5 class="modal-title fw-bold" id="editModalLabel{{ $category->id }}">
                     <i class="bi bi-pencil-square me-2"></i>Edit Kategori
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
