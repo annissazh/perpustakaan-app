@@ -1,12 +1,16 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +38,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat', [BorrowingController::class, 'history'])->name('riwayat.index');
     Route::get('/profil', [ProfileController::class, 'show'])->name('profile.show');
 
+    // Notifikasi pengguna.
+    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifikasi/{notification}/dibaca', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
+    // Daftar ulasan buku dapat dilihat seluruh pengguna.
+    Route::get('/books/{book}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+
     // Manajemen pengguna: admin (superadmin mendapat akses penuh lewat middleware role).
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -42,10 +54,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Pengaturan sistem.
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     });
 
     // Operasional perpustakaan: admin & petugas.
     Route::middleware('role:admin,petugas')->group(function () {
+        // Laporan & analitik.
+        Route::get('/laporan', [AnalyticsController::class, 'index'])->name('analytics.index');
+
         // Kategori buku.
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
@@ -57,7 +76,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/books', [BookController::class, 'index'])->name('books.index');
         Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
         Route::post('/books', [BookController::class, 'store'])->name('books.store');
-        Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
         Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
         Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
         Route::delete('/books/{book}', [BookController::class, 'destroy'])->name('books.destroy');
@@ -82,5 +100,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:anggota')->group(function () {
         Route::post('/katalog/pinjam/{book}', [BorrowingController::class, 'pinjamMandiri'])->name('katalog.pinjam');
         Route::post('/riwayat/kembalikan/{borrowing}', [BorrowingController::class, 'kembalikanMandiri'])->name('riwayat.kembalikan');
+
+        // Ulasan buku (hanya anggota yang boleh memberi ulasan).
+        Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+        Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     });
+
+    // Detail buku: terbuka untuk semua pengguna, tetapi diletakkan di akhir
+    // agar route eksak (/books/create, /books/{book}/edit) tetap diprioritaskan.
+    Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 });

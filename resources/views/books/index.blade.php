@@ -18,31 +18,32 @@
             </div>
 
             <div class="card-body">
-                @if($books->isEmpty())
-                    <div class="text-center py-5">
-                        <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                            <i class="bi bi-book fs-1"></i>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="tableSearch" class="form-control border-start-0"
+                                   placeholder="Cari judul, penulis, ISBN, atau kategori..." autocomplete="off">
                         </div>
-                        <h5 class="fw-bold mb-1">Belum Ada Koleksi Buku</h5>
-                        <p class="text-muted mb-3">Mulai tambahkan data buku baru ke dalam sistem perpustakaan.</p>
-                        <a href="{{ route('books.create') }}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i> Tambah Buku Pertama
-                        </a>
                     </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="table1">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 65px;">Sampul</th>
-                                    <th>Judul & Penulis</th>
-                                    <th>Kategori</th>
-                                    <th class="text-center">Tahun</th>
-                                    <th class="text-center">Stok Total</th>
-                                    <th class="text-center">Stok Tersedia</th>
-                                    <th class="text-center" style="width: 120px;">Aksi</th>
-                                </tr>
-                            </thead>
+                    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end gap-2">
+                        <span class="perpus-table-counter" id="tableCounter"></span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="table1">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 65px;">Sampul</th>
+                                <th>Judul & Penulis</th>
+                                <th>Kategori</th>
+                                <th class="text-center">Tahun</th>
+                                <th class="text-center">Stok Total</th>
+                                <th class="text-center">Stok Tersedia</th>
+                                <th class="text-center" style="width: 120px;">Aksi</th>
+                            </tr>
+                        </thead>
                             <tbody>
                                 @foreach ($books as $book)
                                     <tr>
@@ -109,12 +110,40 @@
                                         </td>
                                     </tr>
                                 @endforeach
+
+                                @if($books->isEmpty())
+                                    @include('partials.empty-row', [
+                                        'colspan' => 7,
+                                        'icon' => 'bi-book',
+                                        'title' => 'Belum Ada Koleksi Buku',
+                                        'text' => 'Mulai tambahkan data buku baru ke dalam sistem perpustakaan.',
+                                        'actionUrl' => route('books.create'),
+                                        'actionLabel' => 'Tambah Buku Pertama',
+                                        'actionIcon' => 'bi-plus-circle',
+                                    ])
+                                @endif
                             </tbody>
                         </table>
+
+                        <div class="perpus-table-empty" id="tableEmpty" hidden>
+                            <i class="bi bi-search"></i>
+                            <p class="mb-0 fw-semibold">Buku tidak ditemukan</p>
+                            <small>Coba ubah kata kunci pencarian Anda.</small>
+                        </div>
                     </div>
-                @endif
+
+                    @if($books->hasPages())
+                        <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                            {{ $books->links() }}
+                            <span class="perpus-table-counter small">
+                                Menampilkan {{ $books->firstItem() ?? 0 }}-{{ $books->lastItem() ?? 0 }} dari {{ $books->total() }} buku
+                            </span>
+                        </div>
+                    @endif
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@include('partials.table-search-script')

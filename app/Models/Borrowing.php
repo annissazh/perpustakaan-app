@@ -28,6 +28,7 @@ class Borrowing extends Model
         'late_days',
         'status',
         'fine_amount',
+        'reminder_sent_at',
     ];
 
     /**

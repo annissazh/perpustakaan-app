@@ -36,7 +36,14 @@ class BookController extends Controller
     {
         $book->load('category');
 
-        return view('books.show', compact('book'));
+        $reviews = $book->reviews()->with('user')->latest()->take(5)->get();
+        $averageRating = $book->reviews()->avg('rating');
+        $totalReviews = $book->reviews()->count();
+        $myReview = auth()->check()
+            ? $book->reviews()->where('user_id', auth()->id())->first()
+            : null;
+
+        return view('books.show', compact('book', 'reviews', 'averageRating', 'totalReviews', 'myReview'));
     }
 
     /**
@@ -151,6 +158,8 @@ class BookController extends Controller
         ]);
 
         $books = Book::with('category')
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->when(
                 $filters['search'] ?? null,
                 fn (Builder $query, string $search) => $query->where(function (Builder $query) use ($search): void {
@@ -167,8 +176,9 @@ class BookController extends Controller
             ->withQueryString();
 
         $categories = Category::orderBy('name')->get();
+        $maxLoanDays = SystemSetting::getInt('maksimal_hari_pinjam', 7);
 
-        return view('katalog', compact('books', 'categories'));
+        return view('katalog', compact('books', 'categories', 'maxLoanDays'));
     }
 
     /**

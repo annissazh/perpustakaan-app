@@ -40,6 +40,19 @@
                         </a>
                     </div>
                 @else
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="tableSearch" class="form-control border-start-0"
+                                       placeholder="Cari nama atau email pengguna..." autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end">
+                            <span class="perpus-table-counter" id="tableCounter"></span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover align-middle" id="table1">
                             <thead class="table-light">
@@ -124,10 +137,19 @@
                                 @endforeach
                             </tbody>
                         </table>
+
+                        <div class="perpus-table-empty" id="tableEmpty" hidden>
+                            <i class="bi bi-search"></i>
+                            <p class="mb-0 fw-semibold">Pengguna tidak ditemukan</p>
+                            <small>Coba ubah kata kunci pencarian Anda.</small>
+                        </div>
                     </div>
 
-                    <div class="mt-3">
+                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                         {{ $users->links() }}
+                        <span class="perpus-table-counter small">
+                            Menampilkan {{ $users->firstItem() ?? 0 }}-{{ $users->lastItem() ?? 0 }} dari {{ $users->total() }} pengguna
+                        </span>
                     </div>
                 @endif
             </div>
@@ -135,3 +157,5 @@
     </div>
 </div>
 @endsection
+
+@include('partials.table-search-script')

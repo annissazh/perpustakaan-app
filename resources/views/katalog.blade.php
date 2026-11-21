@@ -115,12 +115,24 @@
                     </div>
 
                     <h5 class="card-title fw-bold mb-1 book-title-clamp" title="{{ $book->title }}">
-                        {{ $book->title }}
+                        <a href="{{ route('books.show', $book) }}" class="text-dark text-decoration-none stretched-link-off">
+                            {{ $book->title }}
+                        </a>
                     </h5>
 
-                    <p class="card-text text-muted small mb-3">
+                    <p class="card-text text-muted small mb-2">
                         <i class="bi bi-person me-1"></i>{{ $book->author }}
                     </p>
+
+                    @if($book->reviews_avg_rating)
+                        <div class="perpus-book-rating mb-2" title="{{ number_format($book->reviews_avg_rating, 1, ',', '.') }} dari 5">
+                            @for($star = 1; $star <= 5; $star++)
+                                <i class="bi {{ $star <= round($book->reviews_avg_rating) ? 'bi-star-fill' : 'bi-star' }}"></i>
+                            @endfor
+                            <span class="text-muted ms-1">{{ number_format($book->reviews_avg_rating, 1, ',', '.') }}</span>
+                            <span class="text-muted">({{ $book->reviews_count }})</span>
+                        </div>
+                    @endif
 
                     <!-- Footer Kartu: Stok & Tombol Detail -->
                     <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
@@ -156,7 +168,7 @@
                                     @csrf
                                     <button type="submit"
                                             class="btn btn-primary btn-sm w-100 fw-semibold"
-                                            onclick="return confirm('Pinjam buku {{ addslashes($book->title) }} selama 7 hari?')">
+                                            onclick="return confirm('Pinjam buku {{ addslashes($book->title) }} selama {{ $maxLoanDays }} hari?')">
                                         <i class="bi bi-book-half me-1"></i> Pinjam Buku
                                     </button>
                                 </form>

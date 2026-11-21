@@ -18,27 +18,28 @@
             </div>
 
             <div class="card-body">
-                @if($categories->isEmpty())
-                    <div class="text-center py-5">
-                        <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                            <i class="bi bi-tags fs-1"></i>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="tableSearch" class="form-control border-start-0"
+                                   placeholder="Cari nama kategori..." autocomplete="off">
                         </div>
-                        <h5 class="fw-bold mb-1">Belum Ada Kategori</h5>
-                        <p class="text-muted mb-3">Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.</p>
-                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-                            <i class="bi bi-plus-lg me-1"></i> Tambah Kategori
-                        </button>
                     </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="table1">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 65px;">No</th>
-                                    <th>Nama Kategori</th>
-                                    <th class="text-center" style="width: 180px;">Aksi</th>
-                                </tr>
-                            </thead>
+                    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end">
+                        <span class="perpus-table-counter" id="tableCounter"></span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="table1">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 65px;">No</th>
+                                <th>Nama Kategori</th>
+                                <th class="text-center" style="width: 180px;">Aksi</th>
+                            </tr>
+                        </thead>
                             <tbody>
                                 @foreach ($categories as $index => $category)
                                     <tr>
@@ -70,15 +71,40 @@
                                         </td>
                                     </tr>
                                 @endforeach
+
+                                @if($categories->isEmpty())
+                                    @include('partials.empty-row', [
+                                        'colspan' => 3,
+                                        'icon' => 'bi-tags',
+                                        'title' => 'Belum Ada Kategori',
+                                        'text' => 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.',
+                                    ])
+                                @endif
                             </tbody>
                         </table>
+
+                        <div class="perpus-table-empty" id="tableEmpty" hidden>
+                            <i class="bi bi-search"></i>
+                            <p class="mb-0 fw-semibold">Kategori tidak ditemukan</p>
+                            <small>Coba ubah kata kunci pencarian Anda.</small>
+                        </div>
                     </div>
-                @endif
+
+                    @if($categories->hasPages())
+                        <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                            {{ $categories->links() }}
+                            <span class="perpus-table-counter small">
+                                Menampilkan {{ $categories->firstItem() ?? 0 }}-{{ $categories->lastItem() ?? 0 }} dari {{ $categories->total() }} kategori
+                            </span>
+                        </div>
+                    @endif
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@include('partials.table-search-script')
 
 @push('modals')
 <!-- Modal Tambah Kategori -->

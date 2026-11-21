@@ -200,6 +200,41 @@
         </div>
         @endif
 
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card h-100 mb-0">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="bi bi-graph-up text-primary me-1"></i> Tren Peminjaman 14 Hari</h5>
+                        <span class="badge bg-light-primary text-primary">Ringkasan</span>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 260px;">
+                            <canvas id="dashboardTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card h-100 mb-0">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-pie-chart text-primary me-1"></i> Kategori Dipinjam</h5>
+                    </div>
+                    <div class="card-body">
+                        @if(count($categoryChart['values']) > 0)
+                            <div style="position: relative; height: 260px;">
+                                <canvas id="dashboardCategoryChart"></canvas>
+                            </div>
+                        @else
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-pie-chart d-block fs-2 mb-2 opacity-50"></i>
+                                Belum ada buku yang dipinjam.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 mb-2">
             <div class="col-lg-7">
                 <div class="card h-100 mb-0">
@@ -263,6 +298,77 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/extensions/chart.js/chart.umd.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        const trendCanvas = document.getElementById('dashboardTrendChart');
+        if (trendCanvas) {
+            const gradient = trendCanvas.getContext('2d').createLinearGradient(0, 0, 0, 260);
+            gradient.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
+            gradient.addColorStop(1, 'rgba(13, 148, 136, 0)');
+
+            new Chart(trendCanvas, {
+                type: 'line',
+                data: {
+                    labels: @json($trendChart['labels']),
+                    datasets: [{
+                        label: 'Peminjaman',
+                        data: @json($trendChart['values']),
+                        borderColor: '#0d9488',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        borderWidth: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, border: { display: false } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.18)' },
+                            border: { display: false },
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+        }
+
+        const categoryCanvas = document.getElementById('dashboardCategoryChart');
+        if (categoryCanvas) {
+            new Chart(categoryCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: @json($categoryChart['labels']),
+                    datasets: [{
+                        data: @json($categoryChart['values']),
+                        backgroundColor: @json($categoryChart['colors']),
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    });
+</script>
+@endpush
 
 @push('modals')
 <!-- 1. Modal Rincian Total Koleksi -->

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
+use App\Models\SystemSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -34,6 +35,19 @@ class BorrowBook
 
             $durationDays = (int) $data['duration_days'];
             $borrowDate = now()->startOfDay();
+
+            // Batas jumlah buku aktif per anggota diatur dari halaman pengaturan.
+            $maxBooks = SystemSetting::getInt('maksimal_buku_anggota', 3);
+            $activeCount = Borrowing::query()
+                ->where('user_id', $data['user_id'])
+                ->active()
+                ->count();
+
+            if ($activeCount >= $maxBooks) {
+                throw ValidationException::withMessages([
+                    'book_id' => 'Anggota sudah memiliki '.$activeCount.' buku aktif. Batas maksimal adalah '.$maxBooks.' buku.',
+                ]);
+            }
 
             $borrowing = Borrowing::create([
                 'user_id' => $data['user_id'],

@@ -1,6 +1,7 @@
 @php
     $user = Auth::user();
     $roleBadgeClass = $user->role->badgeClass();
+    $appName = \App\Models\SystemSetting::get('nama_perpustakaan') ?: 'PerpusApp';
 @endphp
 
 <aside id="sidebar" aria-label="Navigasi utama">
@@ -11,7 +12,7 @@
                     <div class="perpus-brand-logo">
                         <i class="bi bi-journal-bookmark-fill"></i>
                     </div>
-                    <span class="perpus-brand-text">PerpusApp</span>
+                    <span class="perpus-brand-text">{{ $appName }}</span>
                 </a>
                 <button type="button" class="sidebar-close-btn d-xl-none sidebar-hide" aria-label="Tutup menu">
                     <i class="bi bi-x-lg"></i>
@@ -63,6 +64,18 @@
                     </a>
                 </li>
 
+                <li class="perpus-nav-item {{ Request::is('notifikasi*') ? 'active' : '' }}">
+                    <a href="{{ route('notifications.index') }}" class="perpus-nav-link">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>Notifikasi</span>
+                        @if(auth()->user()->unreadNotifications->isNotEmpty())
+                            <span class="badge bg-danger rounded-pill ms-auto perpus-notification-dot">
+                                {{ auth()->user()->unreadNotifications->count() }}
+                            </span>
+                        @endif
+                    </a>
+                </li>
+
                 @if($user->role->isStaff())
                 <li class="perpus-nav-label">Layanan & Koleksi</li>
 
@@ -93,6 +106,13 @@
                         <span>Sirkulasi</span>
                     </a>
                 </li>
+
+                <li class="perpus-nav-item {{ Request::is('laporan*') ? 'active' : '' }}">
+                    <a href="{{ route('analytics.index') }}" class="perpus-nav-link">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Laporan & Analitik</span>
+                    </a>
+                </li>
                 @endif
 
                 @if($user->role->canManageUsers())
@@ -102,6 +122,13 @@
                     <a href="{{ route('users.index') }}" class="perpus-nav-link">
                         <i class="bi bi-people-fill"></i>
                         <span>Manajemen User</span>
+                    </a>
+                </li>
+
+                <li class="perpus-nav-item {{ Request::is('settings*') ? 'active' : '' }}">
+                    <a href="{{ route('settings.index') }}" class="perpus-nav-link">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>Pengaturan Sistem</span>
                     </a>
                 </li>
                 @endif

@@ -4,10 +4,10 @@
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:linear-gradient(135deg,#f0fdfa,#f8fafc 50%,#eef2ff);background-attachment:fixed;color:#334155;min-height:100vh}
 #app{display:flex;min-height:100vh}
 #sidebar{position:fixed;top:0;left:0;z-index:1040;width:var(--perpus-sidebar-width);height:100vh;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
-#sidebar.active{transform:translateX(0)}
+#sidebar.is-open,#sidebar.active{transform:translateX(0)}
 @media(min-width:1200px){#sidebar{transform:translateX(0)}}
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);z-index:1035;opacity:0;transition:opacity .3s}
-.sidebar-backdrop.show{display:block;opacity:1}
+.sidebar-backdrop.show,.sidebar-backdrop.is-visible{display:block;opacity:1}
 @media(min-width:1200px){.sidebar-backdrop{display:none!important}}
 #main{flex:1;min-height:100vh;display:flex;flex-direction:column;width:100%;padding:1.25rem 1.5rem 2rem}
 @media(min-width:1200px){#main{margin-left:var(--perpus-sidebar-width);padding:1.75rem 2.25rem 2.5rem}}
@@ -139,6 +139,97 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 
 /* --- Pagination Laravel --- */
 .pagination .page-link{border-radius:.5rem!important;margin:0 .15rem;border-color:rgba(13,148,136,.15);color:var(--perpus-primary)}
+
+/* --- Notifikasi --- */
+.perpus-notification-icon{width:44px;height:44px;border-radius:.85rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
+.perpus-notification-unread{background:rgba(13,148,136,.045);border-left:3px solid var(--perpus-primary)}
+[data-theme="dark"] .perpus-notification-unread{background:rgba(45,212,191,.06)}
+/* --- Star rating picker ---
+   Struktur DOM: <input id=rating5><label>5</label><input id=rating4><label>4</label> ...
+   Radio di-render dari 5 ke 1, sehingga label berada DI SETELAH input-nya.
+   CSS `input:checked ~ label` menyorot semua label SETELAH input yang dicentang,
+   yaitu rating yang lebih kecil — arah highlight terbalik.
+   Solusi: flex-direction row-reverse membalik urutan visual menjadi 1 -> 5
+   sehingga general sibling selector bekerja sesuai semantics "rating <= pilihan". */
+.perpus-star-picker{display:inline-flex;flex-direction:row-reverse;gap:.15rem;justify-content:flex-end}
+.perpus-star-picker input{display:none}
+.perpus-star-picker label{font-size:1.6rem;color:#cbd5e1;cursor:pointer;transition:transform .15s,color .15s;line-height:1}
+.perpus-star-picker label:hover,.perpus-star-picker label:hover ~ label,.perpus-star-picker input:checked ~ label{color:#f59e0b}
+.perpus-star-picker label:hover{transform:scale(1.15)}
+.perpus-star-picker label:hover ~ label:hover{transform:scale(1.15)}
+/* Rating ringkasan (baca-saja) */
+.perpus-rating-summary{display:inline-flex;align-items:center;gap:.35rem}
+/* Rating pada kartu buku */
+.perpus-book-rating{display:inline-flex;align-items:center;gap:.2rem;font-size:.85rem;color:#f59e0b}
+/* Indikator hover untuk memberi umpan balik visual */
+.perpus-star-picker:hover label{color:#cbd5e1}
+.perpus-star-picker:hover label:hover,.perpus-star-picker:hover label:hover ~ label{color:#f59e0b}
+.perpus-notification-dot{font-size:.68rem;line-height:1;padding:.35em .55em}
+.perpus-info-list{list-style:none;padding:0;margin:0}
+.perpus-info-list li{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.7rem 0;border-bottom:1px dashed rgba(13,148,136,.18)}
+.perpus-info-list li:last-child{border-bottom:none}
+.perpus-info-list .label{color:#64748b;font-size:.9rem}
+[data-theme="dark"] .perpus-info-list .label{color:#94a3b8}
+.perpus-preview-box{background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.16);border-radius:.85rem}
+
+/* --- Toast notification (vanilla JS) --- */
+.perpus-toast-host{position:fixed;top:1rem;right:1rem;z-index:1090;display:flex;flex-direction:column;gap:.6rem;pointer-events:none;max-width:min(92vw,26rem)}
+.perpus-toast{display:flex;align-items:flex-start;gap:.65rem;padding:.8rem .9rem;border-radius:.85rem;background:rgba(255,255,255,.98);border:1px solid rgba(13,148,136,.16);box-shadow:0 10px 32px -8px rgba(15,23,42,.28);color:#334155;font-size:.9rem;font-weight:500;pointer-events:auto;opacity:0;transform:translateX(120%);transition:opacity .28s ease,transform .28s cubic-bezier(.4,0,.2,1)}
+.perpus-toast.is-visible{opacity:1;transform:translateX(0)}
+.perpus-toast i{font-size:1.1rem;line-height:1.35;flex-shrink:0}
+.perpus-toast span{flex:1;line-height:1.4}
+.perpus-toast__close{border:none;background:transparent;color:#94a3b8;padding:.1rem .25rem;border-radius:.35rem;flex-shrink:0;transition:color .2s,background-color .2s}
+.perpus-toast__close:hover{color:#334155;background:rgba(15,23,42,.06)}
+.perpus-toast--success{border-left:3px solid #059669}
+.perpus-toast--success>i{color:#059669}
+.perpus-toast--error{border-left:3px solid #dc2626}
+.perpus-toast--error>i{color:#dc2626}
+.perpus-toast--warning{border-left:3px solid #d97706}
+.perpus-toast--warning>i{color:#d97706}
+.perpus-toast--info{border-left:3px solid var(--perpus-primary)}
+.perpus-toast--info>i{color:var(--perpus-primary)}
+[data-theme="dark"] .perpus-toast{background:rgba(15,23,42,.97);border-color:rgba(45,212,191,.2);color:#cbd5e1}
+[data-theme="dark"] .perpus-toast__close{color:#64748b}
+[data-theme="dark"] .perpus-toast__close:hover{color:#e2e8f0;background:rgba(148,163,184,.14)}
+
+/* --- Dialog konfirmasi kustom --- */
+.perpus-modal-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:1.25rem;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);opacity:0;transition:opacity .25s ease}
+.perpus-modal-backdrop.is-visible{opacity:1}
+.perpus-modal{width:100%;max-width:26rem;background:#fff;border-radius:1.15rem;padding:1.6rem 1.5rem 1.4rem;text-align:center;box-shadow:0 24px 64px -12px rgba(15,23,42,.45);transform:translateY(14px) scale(.97);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.perpus-modal-backdrop.is-visible .perpus-modal{transform:translateY(0) scale(1)}
+.perpus-modal__icon{width:56px;height:56px;border-radius:1rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:1rem}
+.perpus-modal__icon--danger{background:rgba(220,38,38,.12);color:#dc2626}
+.perpus-modal__icon--primary{background:rgba(13,148,136,.14);color:var(--perpus-primary)}
+.perpus-modal__icon--warning{background:rgba(217,119,6,.14);color:#d97706}
+.perpus-modal__title{font-size:1.1rem;font-weight:800;color:#0f172a;margin:0 0 .5rem;letter-spacing:-.01em}
+.perpus-modal__text{font-size:.92rem;color:#64748b;margin:0 0 1.4rem;line-height:1.55}
+.perpus-modal__actions{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.perpus-modal__actions .btn{min-width:8.5rem;font-weight:600}
+[data-theme="dark"] .perpus-modal{background:#1e293b}
+[data-theme="dark"] .perpus-modal__title{color:#f1f5f9}
+[data-theme="dark"] .perpus-modal__text{color:#94a3b8}
+
+/* --- Rating preview --- */
+.perpus-rating-preview{transition:opacity .2s}
+
+/* --- Cegah scroll saat sidebar mobile terbuka --- */
+.perpus-no-scroll{overflow:hidden}
+
+/* --- Empty state pada tabel --- */
+.perpus-table-empty{padding:2.5rem 1rem;text-align:center;color:#94a3b8;border-radius:.85rem;border:1px dashed rgba(13,148,136,.2);background:rgba(13,148,136,.04);margin-top:.5rem}
+.perpus-table-empty:not([hidden]){animation:perpusFadeUp .35s ease both}
+.perpus-table-empty i{display:block;font-size:2.5rem;margin-bottom:.75rem;opacity:.5}
+.perpus-table-empty p{color:#64748b}
+[data-theme="dark"] .perpus-table-empty{background:rgba(45,212,191,.06);border-color:rgba(45,212,191,.15)}
+
+/* --- Counter hasil pencarian --- */
+.perpus-table-counter{font-size:.8rem;color:#94a3b8;font-weight:500}
+[data-theme="dark"] .perpus-preview-box{background:rgba(45,212,191,.08);border-color:rgba(45,212,191,.18)}
+
+.perpus-notification-dot{font-size:.68rem;line-height:1;padding:.35em .55em}
+
+.perpus-book-rating{display:inline-flex;align-items:center;gap:.2rem;font-size:.85rem;color:#f59e0b}
+
 
 /* --- Dark mode --- */
 .perpus-theme-toggle{background:rgba(13,148,136,.1);border:1px solid rgba(13,148,136,.2);color:var(--perpus-primary);border-radius:.65rem;width:2.35rem;height:2.35rem;display:inline-flex;align-items:center;justify-content:center;transition:transform .2s,background .2s}

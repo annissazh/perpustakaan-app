@@ -137,31 +137,32 @@
             </div>
 
             <div class="card-body">
-                @if($borrowings->isEmpty())
-                    <div class="text-center py-5">
-                        <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                            <i class="bi bi-journal-x fs-1"></i>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" id="tableSearch" class="form-control border-start-0"
+                                   placeholder="Cari nama peminjam atau judul buku..." autocomplete="off">
                         </div>
-                        <h5 class="fw-bold mb-1">Tidak Ada Data Transaksi</h5>
-                        <p class="text-muted mb-3">Belum ada transaksi peminjaman pada periode yang dipilih.</p>
-                        <a href="{{ route('borrowings.create') }}" class="btn btn-success btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i> Catat Peminjaman Baru
-                        </a>
                     </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="table1">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 55px;">No</th>
-                                    <th>Peminjam</th>
-                                    <th>Judul Buku</th>
-                                    <th>Tgl Pinjam</th>
-                                    <th>Batas Kembali</th>
-                                    <th class="text-center">Status</th>
-                                    <th class="text-center" style="width: 150px;">Aksi</th>
-                                </tr>
-                            </thead>
+                    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end">
+                        <span class="perpus-table-counter" id="tableCounter"></span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="table1">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 55px;">No</th>
+                                <th>Peminjam</th>
+                                <th>Judul Buku</th>
+                                <th>Tgl Pinjam</th>
+                                <th>Batas Kembali</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center" style="width: 150px;">Aksi</th>
+                            </tr>
+                        </thead>
                             <tbody>
                                 @foreach ($borrowings as $index => $row)
                                     @php
@@ -228,13 +229,33 @@
                                         </td>
                                     </tr>
                                 @endforeach
+
+                                @if($borrowings->isEmpty())
+                                    @include('partials.empty-row', [
+                                        'colspan' => 7,
+                                        'icon' => 'bi-journal-x',
+                                        'title' => 'Tidak Ada Data Transaksi',
+                                        'text' => 'Belum ada transaksi peminjaman pada periode yang dipilih.',
+                                        'actionUrl' => route('borrowings.create'),
+                                        'actionLabel' => 'Catat Peminjaman Baru',
+                                        'actionIcon' => 'bi-plus-circle',
+                                    ])
+                                @endif
                             </tbody>
                         </table>
+
+                        <div class="perpus-table-empty" id="tableEmpty" hidden>
+                            <i class="bi bi-search"></i>
+                            <p class="mb-0 fw-semibold">Transaksi tidak ditemukan</p>
+                            <small>Coba ubah kata kunci pencarian Anda.</small>
+                        </div>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
                         {{ $borrowings->links() }}
+                        <span class="perpus-table-counter small">
+                            Menampilkan {{ $borrowings->firstItem() ?? 0 }}-{{ $borrowings->lastItem() ?? 0 }} dari {{ $borrowings->total() }} transaksi
+                        </span>
                     </div>
-                @endif
             </div>
         </div>
     </div>
@@ -243,23 +264,38 @@
 
 @push('scripts')
 <script>
-    $(document).on('submit', '.form-return', function (e) {
-        e.preventDefault();
-        const form = this;
-        Swal.fire({
-            title: 'Proses Pengembalian Buku?',
-            text: 'Sistem akan menghitung denda otomatis jika melewati batas tanggal kembali.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#0d9488',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Kembalikan',
-            cancelButtonText: 'Batal',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
+    document.addEventListener('DOMContentLoaded', function () {
+        Perpus.tableSearch({
+            input: '#tableSearch',
+            table: '#table1',
+            empty: '#tableEmpty',
+            counter: '#tableCounter',
+            columns: [1, 2],
+        });
+
+        // Konfirmasi proses pengembalian buku.
+        document.addEventListener('submit', function (event) {
+            const form = event.target;
+
+            if (!(form instanceof HTMLFormElement)) return;
+            if (!form.classList.contains('form-return')) return;
+            if (form.dataset.confirmed === '1') return;
+
+            event.preventDefault();
+
+            Perpus.confirm({
+                title: 'Proses Pengembalian Buku?',
+                text: 'Sistem akan menghitung denda otomatis jika melewati batas tanggal kembali.',
+                confirmText: 'Ya, Kembalikan',
+                cancelText: 'Batal',
+                variant: 'primary',
+                icon: 'bi-arrow-return-left',
+            }).then(function (confirmed) {
+                if (!confirmed) return;
+
+                form.dataset.confirmed = '1';
                 form.submit();
-            }
+            });
         });
     });
 </script>

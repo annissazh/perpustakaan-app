@@ -49,6 +49,11 @@ class User extends Authenticatable
         return $this->hasMany(Borrowing::class, 'user_id');
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     /**
      * Peminjaman yang masih aktif milik pengguna ini.
      */
