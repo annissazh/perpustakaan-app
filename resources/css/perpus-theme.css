@@ -50,6 +50,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:linear-grad
 .stats-icon.blue{background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#2563eb}
 .stats-icon.green{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#059669}
 .stats-icon.red{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626}
+.stats-icon.orange{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
 .avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,var(--perpus-primary),var(--perpus-accent));color:#fff;font-weight:700}
 .avatar-sm{width:36px;height:36px;font-size:.85rem}
 .avatar-md{width:44px;height:44px}

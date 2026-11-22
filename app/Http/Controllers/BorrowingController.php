@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\BorrowBook;
+use App\Actions\ExtendBorrowing;
 use App\Actions\ReturnBook;
 use App\Enums\BorrowingStatus;
 use App\Enums\Role;
+use App\Http\Requests\ExtendBorrowingRequest;
 use App\Http\Requests\ReturnBorrowingRequest;
 use App\Http\Requests\SelfBorrowBookRequest;
 use App\Http\Requests\StoreBorrowingRequest;
@@ -124,6 +126,24 @@ class BorrowingController extends Controller
     }
 
     /**
+     * Memperpanjang masa peminjaman buku.
+     */
+    public function extend(
+        ExtendBorrowingRequest $request,
+        Borrowing $borrowing,
+        ExtendBorrowing $extendBorrowing
+    ): RedirectResponse {
+        try {
+            $updated = $extendBorrowing->handle($borrowing, $request->user()->id);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('borrowings.index')
+            ->with('success', 'Peminjaman diperpanjang sampai '.$updated->due_date?->format('d M Y').'.');
+    }
+
+    /**
      * Menghasilkan PDF yang mengikuti filter yang sedang aktif.
      */
     public function reportPdf(Request $request): Response
@@ -167,7 +187,7 @@ class BorrowingController extends Controller
     {
         $borrowings = Borrowing::query()
             ->where('user_id', $request->user()->id)
-            ->with('book')
+            ->with(['book', 'finePayments'])
             ->latest()
             ->paginate(15);
 

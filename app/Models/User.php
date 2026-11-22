@@ -22,6 +22,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
+        'address',
+        'institution',
+        'birth_date',
+        'gender',
     ];
 
     /**
@@ -41,6 +46,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'birth_date' => 'date',
         ];
     }
 
@@ -52,6 +58,16 @@ class User extends Authenticatable
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function finePayments(): HasMany
+    {
+        return $this->hasMany(FinePayment::class);
     }
 
     /**

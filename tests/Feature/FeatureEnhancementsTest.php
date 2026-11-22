@@ -38,11 +38,15 @@ it('menyimpan pengaturan sistem', function () {
             'telepon_perpustakaan' => '021-123456',
             'maksimal_buku_anggota' => 5,
             'hari_pengingat' => 2,
+            'maksimal_perpanjangan' => 3,
+            'durasi_perpanjangan' => 5,
         ])
         ->assertRedirect(route('settings.index'));
 
     expect(SystemSetting::getInt('denda_per_hari', 0))->toBe(2500)
-        ->and(SystemSetting::get('nama_perpustakaan'))->toBe('Perpus Kota');
+        ->and(SystemSetting::get('nama_perpustakaan'))->toBe('Perpus Kota')
+        ->and(SystemSetting::getInt('maksimal_perpanjangan', 0))->toBe(3)
+        ->and(SystemSetting::getInt('durasi_perpanjangan', 0))->toBe(5);
 });
 
 it('menolak anggota menyimpan pengaturan sistem', function () {

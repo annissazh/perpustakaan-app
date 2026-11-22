@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Borrowing extends Model
 {
@@ -24,6 +25,8 @@ class Borrowing extends Model
         'borrow_date',
         'due_date',
         'duration_days',
+        'extension_count',
+        'extended_at',
         'return_date',
         'late_days',
         'status',
@@ -41,6 +44,8 @@ class Borrowing extends Model
             'due_date' => 'date',
             'return_date' => 'date',
             'duration_days' => 'integer',
+            'extension_count' => 'integer',
+            'extended_at' => 'datetime',
             'late_days' => 'integer',
             'fine_amount' => 'integer',
             'status' => BorrowingStatus::class,
@@ -60,6 +65,11 @@ class Borrowing extends Model
     public function book(): BelongsTo
     {
         return $this->belongsTo(Book::class);
+    }
+
+    public function finePayments(): HasMany
+    {
+        return $this->hasMany(FinePayment::class);
     }
 
     /**
@@ -82,11 +92,18 @@ class Borrowing extends Model
 
     /**
      * True jika buku masih dipinjam dan sudah melewati tanggal tenggat.
+     *
+     * Status "overdue" juga dianggap terlambat karena dipakai untuk
+     * menandai transaksi yang sudah lewat tenggat.
      */
     public function isOverdue(): bool
     {
-        if ($this->return_date !== null || $this->status !== BorrowingStatus::Borrowed) {
+        if ($this->return_date !== null || $this->status->isFinished()) {
             return false;
+        }
+
+        if ($this->status === BorrowingStatus::Overdue) {
+            return true;
         }
 
         return $this->due_date !== null
@@ -99,5 +116,41 @@ class Borrowing extends Model
     public function isActive(): bool
     {
         return $this->return_date === null && $this->status->isActive();
+    }
+
+    /**
+     * Total denda yang sudah dibayar untuk transaksi ini.
+     */
+    public function paidFine(): int
+    {
+        return (int) $this->finePayments()->sum('amount');
+    }
+
+    /**
+     * Sisa denda yang belum dibayar.
+     */
+    public function outstandingFine(): int
+    {
+        return max(0, (int) $this->fine_amount - $this->paidFine());
+    }
+
+    /**
+     * True jika sisa denda masih belum lunas.
+     */
+    public function hasOutstandingFine(): bool
+    {
+        return $this->outstandingFine() > 0;
+    }
+
+    /**
+     * Sisa hari sebelum tanggal tenggat (negatif bila sudah terlambat).
+     */
+    public function daysUntilDue(): int
+    {
+        if ($this->due_date === null) {
+            return 0;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->due_date->copy()->startOfDay(), false);
     }
 }

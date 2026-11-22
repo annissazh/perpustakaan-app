@@ -32,6 +32,8 @@ class UpdateSettingsRequest extends FormRequest
             'telepon_perpustakaan' => ['nullable', 'string', 'max:30'],
             'maksimal_buku_anggota' => ['required', 'integer', 'min:1', 'max:50'],
             'hari_pengingat' => ['required', 'integer', 'min:0', 'max:30'],
+            'maksimal_perpanjangan' => ['required', 'integer', 'min:0', 'max:10'],
+            'durasi_perpanjangan' => ['required', 'integer', 'min:1', 'max:90'],
         ];
     }
 
@@ -49,6 +51,8 @@ class UpdateSettingsRequest extends FormRequest
             'email_perpustakaan.email' => 'Format email perpustakaan tidak valid.',
             'maksimal_buku_anggota.required' => 'Maksimal buku per anggota wajib diisi.',
             'hari_pengingat.required' => 'Jangka waktu pengingat wajib diisi.',
+            'maksimal_perpanjangan.required' => 'Maksimal perpanjangan wajib diisi.',
+            'durasi_perpanjangan.required' => 'Durasi perpanjangan wajib diisi.',
         ];
     }
 }

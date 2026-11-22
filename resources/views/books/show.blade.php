@@ -83,6 +83,14 @@
                                             <i class="bi bi-journal-plus me-1"></i> Pinjam Buku Ini
                                         </button>
                                     </form>
+                                @else
+                                    <form action="{{ route('reservations.store') }}" method="POST" class="no-spinner d-inline">
+                                        @csrf
+                                        <input type="hidden" name="book_id" value="{{ $book->id }}">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="bi bi-bookmark-heart me-1"></i> Reservasi Buku Ini
+                                        </button>
+                                    </form>
                                 @endif
                             @endif
                         </div>

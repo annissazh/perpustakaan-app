@@ -173,9 +173,14 @@
                                     </button>
                                 </form>
                             @else
-                                <button type="button" class="btn btn-secondary btn-sm w-100" disabled>
-                                    <i class="bi bi-x-circle me-1"></i> Stok Habis
-                                </button>
+                                <form action="{{ route('reservations.store') }}" method="POST" class="w-100">
+                                    @csrf
+                                    <input type="hidden" name="book_id" value="{{ $book->id }}">
+                                    <button type="submit"
+                                            class="btn btn-warning btn-sm w-100 fw-semibold">
+                                        <i class="bi bi-bookmark-heart me-1"></i> Reservasi Buku
+                                    </button>
+                                </form>
                             @endif
                         </div>
                     @endif

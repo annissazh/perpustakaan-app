@@ -11,6 +11,8 @@
     ])->count();
     $sudahKembali = $borrowings->where('status', \App\Enums\BorrowingStatus::Returned)->count();
     $totalDendaUser = $borrowings->sum('fine_amount');
+    $totalDendaDibayar = $borrowings->sum(fn ($item) => $item->paidFine());
+    $sisaDendaUser = max(0, $totalDendaUser - $totalDendaDibayar);
 @endphp
 
 <!-- Ringkasan Statistik Peminjaman Pengguna -->
@@ -59,6 +61,21 @@
         </div>
     </div>
 </div>
+
+@if($sisaDendaUser > 0)
+    <div class="alert alert-warning border-0 mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+        <div>
+            <strong><i class="bi bi-exclamation-circle-fill me-1"></i>
+                Sisa denda Anda Rp{{ number_format($sisaDendaUser, 0, ',', '.') }}</strong>
+            <span class="d-block small mt-1">
+                Belum dibayar: Rp{{ number_format($sisaDendaUser, 0, ',', '.') }} dari total denda Rp{{ number_format($totalDendaUser, 0, ',', '.') }}.
+            </span>
+        </div>
+        <span class="badge bg-light-warning text-warning fw-semibold">
+            <i class="bi bi-info-circle me-1"></i> Hubungi petugas untuk pembayaran
+        </span>
+    </div>
+@endif
 
 <!-- Tabel Riwayat Peminjaman -->
 <div class="row">

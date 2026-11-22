@@ -6,9 +6,11 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinePaymentController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
@@ -37,11 +39,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/katalog/search-ajax', [BookController::class, 'searchAjax'])->name('katalog.search');
     Route::get('/riwayat', [BorrowingController::class, 'history'])->name('riwayat.index');
     Route::get('/profil', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');
 
     // Notifikasi pengguna.
     Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifikasi/{notification}/dibaca', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
+    // Reservasi buku: anggota mengirim, petugas memproses.
+    Route::get('/reservasi', [ReservationController::class, 'index'])->name('reservations.index');
+    Route::post('/reservasi', [ReservationController::class, 'store'])->name('reservations.store');
+    Route::delete('/reservasi/{reservation}', [ReservationController::class, 'destroy'])->name('reservations.destroy');
 
     // Daftar ulasan buku dapat dilihat seluruh pengguna.
     Route::get('/books/{book}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
@@ -95,6 +103,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/borrowings/create', [BorrowingController::class, 'create'])->name('borrowings.create');
         Route::post('/borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
         Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'returnBook'])->name('borrowings.return');
+        Route::post('/borrowings/{borrowing}/perpanjang', [BorrowingController::class, 'extend'])->name('borrowings.extend');
+
+        // Pembayaran denda.
+        Route::get('/denda', [FinePaymentController::class, 'index'])->name('fines.index');
+        Route::get('/denda/{borrowing}/bayar', [FinePaymentController::class, 'create'])->name('fines.create');
+        Route::post('/denda/{borrowing}/bayar', [FinePaymentController::class, 'store'])->name('fines.store');
+
+        // Pemenuhan reservasi oleh petugas.
+        Route::post('/reservasi/{reservation}/terapkan', [ReservationController::class, 'fulfil'])->name('reservations.fulfil');
     });
 
     Route::middleware('role:anggota')->group(function () {

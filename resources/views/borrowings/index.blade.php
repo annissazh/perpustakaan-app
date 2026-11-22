@@ -215,12 +215,27 @@
                                         </td>
                                         <td class="text-center">
                                             @if($row->status->isActive())
-                                                <form action="{{ route('borrowings.return', $row) }}" method="POST" class="form-return no-spinner">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-primary fw-semibold">
-                                                        <i class="bi bi-box-arrow-in-down-left me-1"></i>Kembalikan
-                                                    </button>
-                                                </form>
+                                                <div class="d-flex flex-column flex-sm-row gap-1 justify-content-center">
+                                                    @if(! $row->isOverdue())
+                                                        <form action="{{ route('borrowings.extend', $row) }}" method="POST" class="no-spinner d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-light-warning fw-semibold">
+                                                                <i class="bi bi-calendar-plus me-1"></i>Perpanjang
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                    @if($row->hasOutstandingFine())
+                                                        <a href="{{ route('fines.create', $row) }}" class="btn btn-sm btn-light-danger fw-semibold">
+                                                            <i class="bi bi-cash-coin me-1"></i>Bayar Denda
+                                                        </a>
+                                                    @endif
+                                                    <form action="{{ route('borrowings.return', $row) }}" method="POST" class="form-return no-spinner d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-primary fw-semibold">
+                                                            <i class="bi bi-box-arrow-in-down-left me-1"></i>Kembalikan
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             @else
                                                 <span class="text-success small fw-semibold">
                                                     <i class="bi bi-check2-all me-1"></i>Selesai

@@ -37,6 +37,20 @@
                                    value="{{ old('hari_pengingat', $settings['hari_pengingat']) }}" required>
                             @error('hari_pengingat')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold" for="maksimal_perpanjangan">Maksimal Perpanjangan (kali)</label>
+                            <input type="number" min="0" max="10" class="form-control @error('maksimal_perpanjangan') is-invalid @enderror"
+                                   id="maksimal_perpanjangan" name="maksimal_perpanjangan"
+                                   value="{{ old('maksimal_perpanjangan', $settings['maksimal_perpanjangan']) }}" required>
+                            @error('maksimal_perpanjangan')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold" for="durasi_perpanjangan">Durasi Perpanjangan (hari)</label>
+                            <input type="number" min="1" max="90" class="form-control @error('durasi_perpanjangan') is-invalid @enderror"
+                                   id="durasi_perpanjangan" name="durasi_perpanjangan"
+                                   value="{{ old('durasi_perpanjangan', $settings['durasi_perpanjangan']) }}" required>
+                            @error('durasi_perpanjangan')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
                     </div>
                     <p class="text-muted small mb-0 mt-3">
                         <i class="bi bi-info-circle me-1"></i>

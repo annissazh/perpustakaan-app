@@ -179,6 +179,52 @@
                     </div>
                 </div>
             </div>
+            <!-- 5. Denda Terbayar -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#totalDendaModal"
+                     title="Klik untuk melihat rincian transaksi denda">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon green mb-2">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Denda Terbayar</h6>
+                                <h5 class="font-extrabold mb-1">Rp{{ number_format($paidFineTotal ?? 0, 0, ',', '.') }}</h5>
+                                <span class="text-success fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Lihat rincian
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Reservasi Menunggu -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat h-100 mb-0">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon orange mb-2">
+                                    <i class="bi bi-bookmark-heart"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Reservasi Menunggu</h6>
+                                <h5 class="font-extrabold mb-1">{{ $reservationStats['pending'] ?? 0 }}</h5>
+                                <a href="{{ route('reservations.index') }}" class="text-warning fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-arrow-right me-1"></i>Kelola reservasi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if($overdueCount > 0)

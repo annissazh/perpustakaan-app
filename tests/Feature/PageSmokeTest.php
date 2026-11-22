@@ -83,6 +83,8 @@ function daftarHalamanGet(): array
         'kategori edit' => ['categories.edit', ['category']],
         'sirkulasi' => ['borrowings.index', []],
         'sirkulasi form' => ['borrowings.create', []],
+        'reservasi' => ['reservations.index', []],
+        'denda' => ['fines.index', []],
         'pengguna' => ['users.index', []],
         'pengguna form' => ['users.create', []],
         'pengguna edit' => ['users.edit', ['user']],

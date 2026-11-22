@@ -33,13 +33,15 @@
                         <li class="list-group-item px-4 py-3 {{ $isUnread ? 'perpus-notification-unread' : '' }}">
                             <div class="d-flex justify-content-between align-items-start gap-3">
                                 <div class="d-flex gap-3">
-                                    <div class="perpus-notification-icon {{ ($data['type'] ?? '') === 'review_received' ? 'bg-light-primary text-primary' : 'bg-light-warning text-warning' }}">
-                                        <i class="bi {{ ($data['type'] ?? '') === 'review_received' ? 'bi-star-fill' : 'bi-alarm-fill' }}"></i>
+                                    <div class="perpus-notification-icon {{ ($data['type'] ?? '') === 'review_received' ? 'bg-light-primary text-primary' : (($data['type'] ?? '') === 'book_available' ? 'bg-light-success text-success' : 'bg-light-warning text-warning') }}">
+                                        <i class="bi {{ ($data['type'] ?? '') === 'review_received' ? 'bi-star-fill' : (($data['type'] ?? '') === 'book_available' ? 'bi-book-check-fill' : 'bi-alarm-fill') }}"></i>
                                     </div>
                                     <div>
                                         <div class="fw-semibold">
                                             @if(($data['type'] ?? '') === 'review_received')
                                                 Ulasan baru untuk "{{ $data['book_title'] ?? 'Buku' }}"
+                                            @elseif(($data['type'] ?? '') === 'book_available')
+                                                "{{ $data['book_title'] ?? 'Buku' }}" kini tersedia
                                             @else
                                                 Pengingat jatuh tempo: "{{ $data['book_title'] ?? 'Buku' }}"
                                             @endif
@@ -47,6 +49,8 @@
                                         <div class="text-muted small">
                                             @if(($data['type'] ?? '') === 'review_received')
                                                 Rating {{ $data['rating'] ?? 0 }} dari 5 bintang.
+                                            @elseif(($data['type'] ?? '') === 'book_available')
+                                                Reservasi Anda dapat diambil di perpustakaan sekarang.
                                             @else
                                                 Tenggat {{ $data['due_date'] ?? '-' }}
                                                 @if($data['is_overdue'] ?? false)

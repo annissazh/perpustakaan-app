@@ -57,6 +57,13 @@
                     </a>
                 </li>
 
+                <li class="perpus-nav-item {{ Request::is('reservasi*') ? 'active' : '' }}">
+                    <a href="{{ route('reservations.index') }}" class="perpus-nav-link">
+                        <i class="bi bi-bookmark-heart-fill"></i>
+                        <span>Reservasi Buku</span>
+                    </a>
+                </li>
+
                 <li class="perpus-nav-item {{ Request::is('profil*') ? 'active' : '' }}">
                     <a href="{{ route('profile.show') }}" class="perpus-nav-link">
                         <i class="bi bi-person-vcard-fill"></i>
@@ -104,6 +111,13 @@
                     <a href="{{ route('borrowings.index') }}" class="perpus-nav-link">
                         <i class="bi bi-arrow-left-right"></i>
                         <span>Sirkulasi</span>
+                    </a>
+                </li>
+
+                <li class="perpus-nav-item {{ Request::is('denda*') ? 'active' : '' }}">
+                    <a href="{{ route('fines.index') }}" class="perpus-nav-link">
+                        <i class="bi bi-cash-coin-fill"></i>
+                        <span>Pembayaran Denda</span>
                     </a>
                 </li>
 

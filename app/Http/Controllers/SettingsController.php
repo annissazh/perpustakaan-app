@@ -24,6 +24,8 @@ class SettingsController extends Controller
         'alamat_perpustakaan' => '',
         'email_perpustakaan' => '',
         'telepon_perpustakaan' => '',
+        'maksimal_perpanjangan' => 2,
+        'durasi_perpanjangan' => 7,
     ];
 
     /**
