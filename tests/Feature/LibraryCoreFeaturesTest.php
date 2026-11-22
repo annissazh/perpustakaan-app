@@ -8,6 +8,7 @@ use App\Models\FinePayment;
 use App\Models\Reservation;
 use App\Models\SystemSetting;
 use App\Models\User;
+use App\Notifications\BookAvailable;
 
 it('anggota dapat membuat reservasi untuk buku yang stoknya habis', function () {
     $anggota = User::factory()->anggota()->create();
@@ -256,6 +257,28 @@ it('halaman profil menampilkan form edit profil', function () {
         ->assertOk()
         ->assertSee('Edit Profil')
         ->assertSee('name="phone"', false);
+});
+
+it('mengirim notifikasi buku tersedia ketika buku dikembalikan', function () {
+    $anggota = User::factory()->anggota()->create();
+    $book = Book::factory()->create(['total_stock' => 1, 'available_stock' => 0]);
+
+    $borrowing = Borrowing::factory()->create([
+        'user_id' => $anggota->id,
+        'book_id' => $book->id,
+    ]);
+
+    Reservation::factory()->create([
+        'user_id' => $anggota->id,
+        'book_id' => $book->id,
+    ]);
+
+    $this->actingAs(User::factory()->petugas()->create())
+        ->post(route('borrowings.return', $borrowing), ['status' => 'returned'])
+        ->assertRedirect(route('borrowings.index'));
+
+    expect($anggota->notifications()->count())->toBe(1)
+        ->and($anggota->notifications()->first()->type)->toBe(BookAvailable::class);
 });
 
 it('command reservasi memberi tahu anggota ketika buku tersedia', function () {

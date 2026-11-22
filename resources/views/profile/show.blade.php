@@ -61,6 +61,12 @@
                             <span class="value">{{ $user->birth_date->format('d M Y') }}</span>
                         </li>
                     @endif
+                    @if($user->gender)
+                        <li>
+                            <span class="label">Jenis Kelamin</span>
+                            <span class="value">{{ $user->gender === 'male' ? 'Laki-laki' : 'Perempuan' }}</span>
+                        </li>
+                    @endif
                     <li>
                         <span class="label">Bergabung</span>
                         <span class="value">{{ $user->created_at?->format('d M Y') ?? '-' }}</span>
@@ -176,6 +182,16 @@
                                    class="form-control @error('birth_date') is-invalid @enderror"
                                    value="{{ old('birth_date', $user->birth_date?->format('Y-m-d')) }}">
                             @error('birth_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label for="gender" class="form-label fw-semibold">Jenis Kelamin</label>
+                            <select id="gender" name="gender"
+                                    class="form-select @error('gender') is-invalid @enderror">
+                                <option value="">Pilih jenis kelamin</option>
+                                <option value="male" @selected(old('gender', $user->gender) === 'male')>Laki-laki</option>
+                                <option value="female" @selected(old('gender', $user->gender) === 'female')>Perempuan</option>
+                            </select>
+                            @error('gender')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <label for="address" class="form-label fw-semibold">Alamat</label>

@@ -81,7 +81,7 @@ class ReturnBook
             ->pending()
             ->where('book_id', $book->id)
             ->get()
-            ->each(function (Reservation $reservation): void {
+            ->each(function (Reservation $reservation) use ($book): void {
                 $reservation->user?->notify(new BookAvailable($book));
             });
     }
