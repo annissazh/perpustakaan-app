@@ -60,6 +60,8 @@
                 <option value="expired" @selected(request('status') === 'expired')>Kedaluwarsa</option>
             </select>
         </form>
+    </div>
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="table1">
@@ -118,12 +120,6 @@
                             </td>
                         </tr>
                     @endforeach
-
-
-    </div>
-
-
-
 
                     @if($reservations->isEmpty())
                         @include('partials.empty-row', [
