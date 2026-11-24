@@ -12,9 +12,11 @@
                     <h4 class="card-title mb-1">Daftar Kategori Buku</h4>
                     <p class="text-muted small mb-0">Kelola pengelompokan koleksi buku perpustakaan.</p>
                 </div>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-                    <i class="bi bi-plus-lg me-1"></i> Tambah Kategori
-                </button>
+                @if(auth()->user()->role === 'admin')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Kategori
+                    </button>
+                @endif
             </div>
 
             <div class="card-body">
@@ -37,19 +39,22 @@
                             <tr>
                                 <th style="width: 65px;">No</th>
                                 <th>Nama Kategori</th>
-                                <th class="text-center" style="width: 180px;">Aksi</th>
+                                @if(auth()->user()->role === 'admin')
+                                    <th class="text-center" style="width: 180px;">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
-                            <tbody>
-                                @foreach ($categories as $index => $category)
-                                    <tr>
-                                        <td class="text-muted">{{ $index + 1 }}</td>
-                                        <td>
-                                            <span class="badge bg-light-primary text-primary me-2">
-                                                <i class="bi bi-tag-fill"></i>
-                                            </span>
-                                            <strong class="text-dark">{{ $category->name }}</strong>
-                                        </td>
+                        <tbody>
+                            @foreach ($categories as $index => $category)
+                                <tr>
+                                    <td class="text-muted">{{ $index + 1 }}</td>
+                                    <td>
+                                        <span class="badge bg-light-primary text-primary me-2">
+                                            <i class="bi bi-tag-fill"></i>
+                                        </span>
+                                        <strong class="text-dark">{{ $category->name }}</strong>
+                                    </td>
+                                    @if(auth()->user()->role === 'admin')
                                         <td class="text-center">
                                             <div class="table-action-buttons justify-content-center">
                                                 <button type="button"
@@ -60,7 +65,7 @@
                                                     <i class="bi bi-pencil-square me-1"></i>Edit
                                                 </button>
 
-                                                <form action="{{ route('categories.update', $category) }}" method="POST" class="form-delete">
+                                                <form action="{{ route('categories.destroy', $category) }}" method="POST" class="form-delete">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-light-danger text-danger fw-semibold" title="Hapus Kategori">
@@ -69,35 +74,38 @@
                                                 </form>
                                             </div>
                                         </td>
-                                    </tr>
-                                @endforeach
+                                    @endif
+                                </tr>
+                            @endforeach
 
-                                @if($categories->isEmpty())
-                                    @include('partials.empty-row', [
-                                        'colspan' => 3,
-                                        'icon' => 'bi-tags',
-                                        'title' => 'Belum Ada Kategori',
-                                        'text' => 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.',
-                                    ])
-                                @endif
-                            </tbody>
-                        </table>
+                            @if($categories->isEmpty())
+                                @include('partials.empty-row', [
+                                    'colspan' => auth()->user()->role === 'admin' ? 3 : 2,
+                                    'icon' => 'bi-tags',
+                                    'title' => 'Belum Ada Kategori',
+                                    'text' => auth()->user()->role === 'admin'
+                                        ? 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.'
+                                        : 'Belum ada data kategori buku yang tersedia.',
+                                ])
+                            @endif
+                        </tbody>
+                    </table>
 
-                        <div class="perpus-table-empty" id="tableEmpty" hidden>
-                            <i class="bi bi-search"></i>
-                            <p class="mb-0 fw-semibold">Kategori tidak ditemukan</p>
-                            <small>Coba ubah kata kunci pencarian Anda.</small>
-                        </div>
+                    <div class="perpus-table-empty" id="tableEmpty" hidden>
+                        <i class="bi bi-search"></i>
+                        <p class="mb-0 fw-semibold">Kategori tidak ditemukan</p>
+                        <small>Coba ubah kata kunci pencarian Anda.</small>
                     </div>
+                </div>
 
-                    @if($categories->hasPages())
-                        <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                            {{ $categories->links() }}
-                            <span class="perpus-table-counter small">
-                                Menampilkan {{ $categories->firstItem() ?? 0 }}-{{ $categories->lastItem() ?? 0 }} dari {{ $categories->total() }} kategori
-                            </span>
-                        </div>
-                    @endif
+                @if($categories->hasPages())
+                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                        {{ $categories->links() }}
+                        <span class="perpus-table-counter small">
+                            Menampilkan {{ $categories->firstItem() ?? 0 }}-{{ $categories->lastItem() ?? 0 }} dari {{ $categories->total() }} kategori
+                        </span>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -106,6 +114,7 @@
 
 @include('partials.table-search-script')
 
+@if(auth()->user()->role === 'admin')
 @push('modals')
 <!-- Modal Tambah Kategori -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
@@ -164,3 +173,4 @@
 </div>
 @endforeach
 @endpush
+@endif
