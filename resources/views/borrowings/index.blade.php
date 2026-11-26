@@ -230,12 +230,12 @@
                                         @if($row->status->isActive())
                                             <div class="d-flex flex-column flex-sm-row gap-1 justify-content-center">
                                                 @if(! $row->isOverdue())
-                                                    <form action="{{ route('borrowings.extend', $row) }}" method="POST" class="no-spinner d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-light-warning fw-semibold">
-                                                            <i class="bi bi-calendar-plus me-1"></i>Perpanjang
-                                                        </button>
-                                                    </form>
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-light-warning fw-semibold"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#extendModal{{ $row->id }}">
+                                                        <i class="bi bi-calendar-plus me-1"></i>Perpanjang
+                                                    </button>
                                                 @endif
                                                 @if($row->hasOutstandingFine())
                                                     <a href="{{ route('fines.create', $row) }}" class="btn btn-sm btn-light-danger fw-semibold">
@@ -289,6 +289,46 @@
     </div>
 </div>
 @endsection
+
+@push('modals')
+@foreach ($borrowings as $row)
+    @if($row->status->isActive() && ! $row->isOverdue())
+        <div class="modal fade" id="extendModal{{ $row->id }}" tabindex="-1" aria-labelledby="extendModalLabel{{ $row->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header perpus-modal-header-warning">
+                        <h5 class="modal-title fw-bold" id="extendModalLabel{{ $row->id }}">
+                            <i class="bi bi-calendar-plus me-2"></i>Perpanjang Masa Peminjaman
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('borrowings.extend', $row) }}" method="POST">
+                        @csrf
+                        <div class="modal-body p-4">
+                            <p class="mb-2 small text-muted">
+                                Peminjam: <strong class="text-dark">{{ $row->user->name ?? '-' }}</strong><br>
+                                Buku: <strong class="text-dark">{{ $row->book->title ?? '-' }}</strong><br>
+                                Batas Kembali Saat Ini: <strong class="text-danger">{{ $row->due_date?->format('d M Y') }}</strong>
+                            </p>
+                            <div class="mt-3">
+                                <label class="form-label fw-semibold">Tambah Durasi (Hari) <span class="text-danger">*</span></label>
+                                <input type="number" name="days" class="form-control" min="1" max="30" value="7" required>
+                                <small class="text-muted">Masukkan jumlah hari tambahan dari batas kembali saat ini (minimal 1 hari).</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i> Simpan Perpanjangan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+@endforeach
+@endpush
 
 @push('scripts')
 <script>
